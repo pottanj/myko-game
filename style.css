@@ -1,0 +1,53 @@
+:root {
+  color-scheme: dark;
+  font-family: "Courier New", monospace;
+  background: #171c17;
+  color: #f7e7bb;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 50% 20%, #344734 0, transparent 45%),
+    #171c17;
+}
+
+.game-shell { width: min(100%, 1060px); }
+
+.game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 24px;
+  margin-bottom: 12px;
+}
+
+.eyebrow { margin: 0 0 2px; color: #d1a866; font-size: 12px; letter-spacing: .18em; }
+h1 { margin: 0; color: #fff0c9; font-size: clamp(34px, 6vw, 58px); line-height: .9; letter-spacing: .08em; text-shadow: 4px 4px #7b4431; }
+.controls { margin: 0; color: #d8cfae; font-size: 13px; text-align: right; }
+kbd { display: inline-block; min-width: 24px; margin: 0 2px; padding: 3px 6px; border: 2px solid #80694a; background: #302d24; color: #fff0c9; box-shadow: 0 2px #171711; text-align: center; }
+
+.canvas-frame {
+  position: relative;
+  overflow: hidden;
+  border: 5px solid #573d2c;
+  outline: 3px solid #9a7045;
+  box-shadow: 0 18px 50px #0b0d0baa;
+  background: #293f3a;
+}
+
+canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; outline: none; }
+.start-hint { position: absolute; inset: auto 50% 18px auto; translate: 50% 0; padding: 8px 12px; background: #182019d9; border: 2px solid #b98b51; color: #fff0c9; font-size: 12px; pointer-events: none; }
+.start-hint.hidden { display: none; }
+
+@media (max-width: 720px) {
+  body { padding: 12px; }
+  .game-header { align-items: start; flex-direction: column; gap: 8px; }
+  .controls { text-align: left; line-height: 2; }
+}
