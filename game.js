@@ -2703,8 +2703,8 @@
 
   function drawStreetLamps() {
     if (currentLevel !== 2 || !streetLampSprite.complete || !streetLampSprite.naturalWidth) return;
-    const lampWidth = 62;
-    const lampHeight = 150;
+    const lampWidth = 52;
+    const lampHeight = 126;
     for (let index = 0; index < level2StreetLamps.length; index++) {
       const lamp = level2StreetLamps[index];
       const x = Math.round(lamp.x - camera.x - lampWidth / 2);
@@ -2715,7 +2715,7 @@
       // Two pixel flames oscillate independently over the still base sprite.
       const flicker = Math.sin(animationTime * 11 + index * 1.9);
       const flameX = Math.round(x + lampWidth * .5);
-      const flameY = Math.round(y + 39 + flicker * 2);
+      const flameY = Math.round(y + 33 + flicker * 2);
       ctx.save();
       ctx.globalCompositeOperation = "screen";
       ctx.fillStyle = `rgba(255, 154, 48, ${.34 + Math.abs(flicker) * .14})`;
@@ -2742,20 +2742,30 @@
     for (let index = 0; index < level2StreetLamps.length; index++) {
       const lamp = level2StreetLamps[index];
       const lx = lamp.x - camera.x;
-      const ly = lamp.y - camera.y - 78;
+      const ly = lamp.y - camera.y - 76;
       if (lx < -170 || lx > VIEW_W + 170) continue;
-      const pulse = .36 + (Math.sin(animationTime * 7.5 + index * 1.7) + 1) * .035;
+      const pulse = .34 + (Math.sin(animationTime * 7.5 + index * 1.7) + 1) * .03;
       lightingCtx.save();
-      lightingCtx.translate(lx, ly);
-      lightingCtx.scale(1.35, .82);
-      const lampGlow = lightingCtx.createRadialGradient(0, 0, 5, 0, 0, 112);
+      // The solid cap blocks every ray above the glass. Light escapes only
+      // through the lower opening and widens softly toward the grass.
+      lightingCtx.beginPath();
+      lightingCtx.rect(0, ly, VIEW_W, VIEW_H - ly);
+      lightingCtx.clip();
+      lightingCtx.filter = "blur(10px)";
+      const bottomY = ly + 102;
+      const lampGlow = lightingCtx.createLinearGradient(0, ly, 0, bottomY);
       lampGlow.addColorStop(0, `rgba(0,0,0,${pulse})`);
-      lampGlow.addColorStop(.48, `rgba(0,0,0,${pulse * .54})`);
+      lampGlow.addColorStop(.68, `rgba(0,0,0,${pulse * .58})`);
       lampGlow.addColorStop(1, "rgba(0,0,0,0)");
       lightingCtx.fillStyle = lampGlow;
       lightingCtx.beginPath();
-      lightingCtx.arc(0, 0, 112, 0, Math.PI * 2);
+      lightingCtx.moveTo(lx - 15, ly);
+      lightingCtx.lineTo(lx + 15, ly);
+      lightingCtx.lineTo(lx + 78, bottomY);
+      lightingCtx.lineTo(lx - 78, bottomY);
+      lightingCtx.closePath();
       lightingCtx.fill();
+      lightingCtx.filter = "none";
       lightingCtx.restore();
     }
     lightingCtx.globalCompositeOperation = "source-over";
