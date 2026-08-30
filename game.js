@@ -399,7 +399,7 @@
 
   const player = { x: 480, y: 407, w: 34, h: 48, vx: 0, vy: 0, grounded: true, facing: 1, hp: 5, maxHp: 5, hurtTimer: 0, jumpsUsed: 0, idleTimer: 0 };
   const spawn = { x: 174, y: 350 };
-  const LEVEL_TWO_TEST_MODE = true;
+  const LEVEL_TWO_TEST_MODE = false;
   const camera = { x: 0, y: 0 };
   const keys = new Set();
   const MUSHROOM_GOAL = 30;
@@ -1317,11 +1317,15 @@
     gameOverMenuSound.currentTime = 0;
     deathTransitionTimer = 0;
     gameOverRevealTimer = 0;
-    gameState = "playing";
+    gameState = currentLevel === 1 ? "cabin" : "playing";
     flashlightEquipped = false;
     animationTime = 0;
     keys.clear();
-    Object.assign(player, spawn, { vx: 0, vy: 0, grounded: false, climbing: false, hp: player.maxHp, hurtTimer: 0, facing: 1, jumpsUsed: 0, idleTimer: 0 });
+    if (currentLevel === 1) {
+      Object.assign(player, { x: 480, y: 407, vx: 0, vy: 0, grounded: true, climbing: false, hp: player.maxHp, hurtTimer: 0, facing: 1, jumpsUsed: 0, idleTimer: 0 });
+    } else {
+      Object.assign(player, spawn, { vx: 0, vy: 0, grounded: false, climbing: false, hp: player.maxHp, hurtTimer: 0, facing: 1, jumpsUsed: 0, idleTimer: 0 });
+    }
     camera.x = 0;
     camera.y = 0;
     basket.brown = 0;
