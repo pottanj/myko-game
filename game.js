@@ -641,6 +641,8 @@
     woodPlatformReady = true;
   });
   woodPlatformSprite.src = "assets/custom/wood_platform_x.png?v=20260827-1";
+  const streetLampSprite = new Image();
+  streetLampSprite.src = "assets/custom/street_lamp_level2_v1.png?v=20260830-1";
 
   const level1Platforms = [
     { x: 0, y: 455, w: 570, h: 85 },
@@ -772,6 +774,14 @@
     { x: 2740, y: 455, scale: .78, variant: 2 },
     { x: 2970, y: 455, scale: .82, variant: 0 },
     { x: 3260, y: 455, scale: .8, variant: 1 }
+  ];
+  const level2StreetLamps = [
+    { x: 410, y: 455 },
+    { x: 980, y: 455 },
+    { x: 1515, y: 455 },
+    { x: 2070, y: 455 },
+    { x: 2910, y: 455 },
+    { x: 3350, y: 455 }
   ];
   const level2SurfaceSpots = [
     [300,429],[730,429],[825,309],[1110,249],[1180,429],
@@ -2691,6 +2701,33 @@
     ctx.drawImage(lightingCanvas, 0, 0);
   }
 
+  function drawStreetLamps() {
+    if (currentLevel !== 2 || !streetLampSprite.complete || !streetLampSprite.naturalWidth) return;
+    const lampWidth = 62;
+    const lampHeight = 150;
+    for (let index = 0; index < level2StreetLamps.length; index++) {
+      const lamp = level2StreetLamps[index];
+      const x = Math.round(lamp.x - camera.x - lampWidth / 2);
+      const y = Math.round(lamp.y - camera.y - lampHeight);
+      if (x + lampWidth < -20 || x > VIEW_W + 20) continue;
+      ctx.drawImage(streetLampSprite, x, y, lampWidth, lampHeight);
+
+      // Two pixel flames oscillate independently over the still base sprite.
+      const flicker = Math.sin(animationTime * 11 + index * 1.9);
+      const flameX = Math.round(x + lampWidth * .5);
+      const flameY = Math.round(y + 39 + flicker * 2);
+      ctx.save();
+      ctx.globalCompositeOperation = "screen";
+      ctx.fillStyle = `rgba(255, 154, 48, ${.34 + Math.abs(flicker) * .14})`;
+      ctx.fillRect(flameX - 5, flameY - 7, 10, 13);
+      ctx.fillStyle = `rgba(255, 228, 116, ${.56 + Math.abs(flicker) * .2})`;
+      ctx.fillRect(flameX - 3, flameY - 5, 6, 10);
+      ctx.fillStyle = "rgba(255, 250, 201, .76)";
+      ctx.fillRect(flameX - 1, flameY - 2, 3, 6);
+      ctx.restore();
+    }
+  }
+
   function drawLevelTwoDarkness() {
     if (currentLevel !== 2 || gameState === "intro" || gameState === "cabin") return;
 
@@ -2698,6 +2735,30 @@
     lightingCtx.globalCompositeOperation = "source-over";
     lightingCtx.fillStyle = flashlightEquipped ? "rgba(1, 5, 9, .93)" : "rgba(0, 2, 5, .965)";
     lightingCtx.fillRect(0, 0, VIEW_W, VIEW_H);
+
+    // The lanterns reveal only a restrained oval of the path. Their light is
+    // intentionally weaker than the flashlight and never illuminates Myko.
+    lightingCtx.globalCompositeOperation = "destination-out";
+    for (let index = 0; index < level2StreetLamps.length; index++) {
+      const lamp = level2StreetLamps[index];
+      const lx = lamp.x - camera.x;
+      const ly = lamp.y - camera.y - 78;
+      if (lx < -170 || lx > VIEW_W + 170) continue;
+      const pulse = .36 + (Math.sin(animationTime * 7.5 + index * 1.7) + 1) * .035;
+      lightingCtx.save();
+      lightingCtx.translate(lx, ly);
+      lightingCtx.scale(1.35, .82);
+      const lampGlow = lightingCtx.createRadialGradient(0, 0, 5, 0, 0, 112);
+      lampGlow.addColorStop(0, `rgba(0,0,0,${pulse})`);
+      lampGlow.addColorStop(.48, `rgba(0,0,0,${pulse * .54})`);
+      lampGlow.addColorStop(1, "rgba(0,0,0,0)");
+      lightingCtx.fillStyle = lampGlow;
+      lightingCtx.beginPath();
+      lightingCtx.arc(0, 0, 112, 0, Math.PI * 2);
+      lightingCtx.fill();
+      lightingCtx.restore();
+    }
+    lightingCtx.globalCompositeOperation = "source-over";
 
     if (flashlightEquipped) {
       const px = player.x - camera.x + player.w / 2;
@@ -3112,6 +3173,7 @@
     drawTrees();
     drawBushes();
     drawPlatforms();
+    drawStreetLamps();
     drawCabinExterior();
     drawWaterfalls();
     drawLadders();
