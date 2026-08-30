@@ -329,6 +329,7 @@
 
   const player = { x: 480, y: 407, w: 34, h: 48, vx: 0, vy: 0, grounded: true, facing: 1, hp: 5, maxHp: 5, hurtTimer: 0, jumpsUsed: 0, idleTimer: 0 };
   const spawn = { x: 174, y: 350 };
+  const LEVEL_TWO_TEST_MODE = true;
   const camera = { x: 0, y: 0 };
   const keys = new Set();
   const MUSHROOM_GOAL = 30;
@@ -337,7 +338,7 @@
   const level1Portal = { x: 3480, y: 365, w: 58, h: 90 };
   const cabin = { x: 0, y: 175, w: 316, h: 280, doorX: 164, doorY: 339, doorW: 55, doorH: 88 };
   let gameState = "intro";
-  let currentLevel = 1;
+  let currentLevel = LEVEL_TWO_TEST_MODE ? 2 : 1;
   let flashlightEquipped = false;
   let animationTime = 0;
 
@@ -921,7 +922,13 @@
       if (introStarting) {
         introStartTimer += dt;
         if (introStartTimer >= .78) {
-          gameState = "cabin";
+          gameState = LEVEL_TWO_TEST_MODE ? "playing" : "cabin";
+          if (LEVEL_TWO_TEST_MODE) {
+            Object.assign(player, spawn, { vx: 0, vy: 0, grounded: false, climbing: false, facing: 1 });
+            camera.x = 0;
+            camera.y = 0;
+            resetBear();
+          }
           introStarting = false;
           introStartTimer = 0;
         }
@@ -2684,6 +2691,52 @@
     ctx.drawImage(lightingCanvas, 0, 0);
   }
 
+  function drawLevelTwoDarkness() {
+    if (currentLevel !== 2 || gameState === "intro" || gameState === "cabin") return;
+
+    lightingCtx.clearRect(0, 0, VIEW_W, VIEW_H);
+    lightingCtx.globalCompositeOperation = "source-over";
+    lightingCtx.fillStyle = flashlightEquipped ? "rgba(1, 5, 9, .88)" : "rgba(0, 2, 5, .965)";
+    lightingCtx.fillRect(0, 0, VIEW_W, VIEW_H);
+
+    if (flashlightEquipped) {
+      const px = player.x - camera.x + player.w / 2;
+      const py = player.y - camera.y + player.h * .56;
+      const direction = player.facing || 1;
+      lightingCtx.globalCompositeOperation = "destination-out";
+
+      // A small pool keeps Myko readable while the long cone makes direction
+      // and exploration matter throughout the dark second level.
+      const halo = lightingCtx.createRadialGradient(px, py, 6, px, py, 88);
+      halo.addColorStop(0, "rgba(0,0,0,.96)");
+      halo.addColorStop(.55, "rgba(0,0,0,.62)");
+      halo.addColorStop(1, "rgba(0,0,0,0)");
+      lightingCtx.fillStyle = halo;
+      lightingCtx.beginPath();
+      lightingCtx.arc(px, py, 88, 0, Math.PI * 2);
+      lightingCtx.fill();
+
+      lightingCtx.save();
+      lightingCtx.filter = "blur(24px)";
+      const beam = lightingCtx.createLinearGradient(px, py, px + direction * 520, py);
+      beam.addColorStop(0, "rgba(0,0,0,1)");
+      beam.addColorStop(.62, "rgba(0,0,0,.9)");
+      beam.addColorStop(1, "rgba(0,0,0,0)");
+      lightingCtx.fillStyle = beam;
+      lightingCtx.beginPath();
+      lightingCtx.moveTo(px + direction * 2, py - 16);
+      lightingCtx.lineTo(px + direction * 520, py - 190);
+      lightingCtx.lineTo(px + direction * 520, py + 190);
+      lightingCtx.lineTo(px + direction * 2, py + 16);
+      lightingCtx.closePath();
+      lightingCtx.fill();
+      lightingCtx.restore();
+      lightingCtx.globalCompositeOperation = "source-over";
+    }
+
+    ctx.drawImage(lightingCanvas, 0, 0);
+  }
+
   function drawFloatingFeedback() {
     ctx.save();
     ctx.textAlign = "center";
@@ -3080,6 +3133,7 @@
     drawFloatingFeedback();
     const caveDepth = Math.max(0, Math.min(1, (player.y - 500) / 220));
     drawCaveLighting(caveDepth);
+    drawLevelTwoDarkness();
     ctx.fillStyle = "#13241c66";
     ctx.fillRect(0, VIEW_H - 8, VIEW_W, 8);
     drawHud();
