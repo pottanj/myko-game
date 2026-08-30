@@ -2710,12 +2710,31 @@
       const x = Math.round(lamp.x - camera.x - lampWidth / 2);
       const y = Math.round(lamp.y - camera.y - lampHeight);
       if (x + lampWidth < -20 || x > VIEW_W + 20) continue;
-      ctx.drawImage(streetLampSprite, x, y, lampWidth, lampHeight);
-
-      // Two pixel flames oscillate independently over the still base sprite.
       const flicker = Math.sin(animationTime * 11 + index * 1.9);
       const flameX = Math.round(x + lampWidth * .5);
       const flameY = Math.round(y + 33 + flicker * 2);
+
+      // Warm firelight begins at the flame itself and fans down toward the
+      // grass. It is drawn before characters, so Myko never receives a glow.
+      ctx.save();
+      ctx.globalCompositeOperation = "screen";
+      const warmLight = ctx.createLinearGradient(0, flameY, 0, lamp.y - camera.y + 8);
+      warmLight.addColorStop(0, "rgba(255, 207, 88, .28)");
+      warmLight.addColorStop(.58, "rgba(255, 166, 53, .15)");
+      warmLight.addColorStop(1, "rgba(255, 126, 28, 0)");
+      ctx.fillStyle = warmLight;
+      ctx.beginPath();
+      ctx.moveTo(flameX - 5, flameY);
+      ctx.lineTo(flameX + 5, flameY);
+      ctx.lineTo(flameX + 72, lamp.y - camera.y + 8);
+      ctx.lineTo(flameX - 72, lamp.y - camera.y + 8);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+
+      ctx.drawImage(streetLampSprite, x, y, lampWidth, lampHeight);
+
+      // Two pixel flames oscillate independently over the still base sprite.
       ctx.save();
       ctx.globalCompositeOperation = "screen";
       ctx.fillStyle = `rgba(255, 154, 48, ${.34 + Math.abs(flicker) * .14})`;
@@ -2742,7 +2761,7 @@
     for (let index = 0; index < level2StreetLamps.length; index++) {
       const lamp = level2StreetLamps[index];
       const lx = lamp.x - camera.x;
-      const ly = lamp.y - camera.y - 76;
+      const ly = lamp.y - camera.y - 93;
       if (lx < -170 || lx > VIEW_W + 170) continue;
       const pulse = .34 + (Math.sin(animationTime * 7.5 + index * 1.7) + 1) * .03;
       lightingCtx.save();
@@ -2752,15 +2771,15 @@
       lightingCtx.rect(0, ly, VIEW_W, VIEW_H - ly);
       lightingCtx.clip();
       lightingCtx.filter = "blur(10px)";
-      const bottomY = ly + 102;
+      const bottomY = lamp.y - camera.y + 8;
       const lampGlow = lightingCtx.createLinearGradient(0, ly, 0, bottomY);
       lampGlow.addColorStop(0, `rgba(0,0,0,${pulse})`);
       lampGlow.addColorStop(.68, `rgba(0,0,0,${pulse * .58})`);
       lampGlow.addColorStop(1, "rgba(0,0,0,0)");
       lightingCtx.fillStyle = lampGlow;
       lightingCtx.beginPath();
-      lightingCtx.moveTo(lx - 15, ly);
-      lightingCtx.lineTo(lx + 15, ly);
+      lightingCtx.moveTo(lx - 5, ly);
+      lightingCtx.lineTo(lx + 5, ly);
       lightingCtx.lineTo(lx + 78, bottomY);
       lightingCtx.lineTo(lx - 78, bottomY);
       lightingCtx.closePath();
