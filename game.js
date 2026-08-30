@@ -342,7 +342,7 @@
   const CAVE_BEAR_VISUAL_SINK = 15;
   const CABIN_VISUAL_RISE = -6;
 
-  const player = { x: 480, y: 407, w: 34, h: 48, vx: 0, vy: 0, grounded: true, facing: 1, hp: 5, maxHp: 5, hurtTimer: 0, jumpsUsed: 0, idleTimer: 0, waterfallFall: false };
+  const player = { x: 480, y: 407, w: 34, h: 48, vx: 0, vy: 0, grounded: true, facing: 1, hp: 5, maxHp: 5, hurtTimer: 0, jumpsUsed: 0, idleTimer: 0 };
   const spawn = { x: 174, y: 350 };
   const LEVEL_TWO_TEST_MODE = true;
   const camera = { x: 0, y: 0 };
@@ -1059,12 +1059,10 @@
     // lip, keep the waterfall column open all the way down so the fall—not
     // touching the animated water—causes the eventual game over.
     const playerCenterX = player.x + player.w / 2;
-    if (currentLevel !== 2 || player.y + player.h <= 455) player.waterfallFall = false;
-    if (currentLevel === 2 && player.y + player.h > 455 &&
+    const fallingThroughLevelTwoGap = currentLevel === 2 && player.y + player.h > 455 &&
       level2WaterfallHazards.some((waterfall) => (
         playerCenterX > waterfall.x && playerCenterX < waterfall.x + waterfall.w
-      ))) player.waterfallFall = true;
-    const fallingThroughLevelTwoGap = currentLevel === 2 && player.waterfallFall;
+      ));
 
     for (const platform of level.platforms) {
       // Falling through a waterfall bypasses only the broad cave floor. The
@@ -1077,9 +1075,6 @@
         player.vy = 0;
         player.grounded = true;
         player.jumpsUsed = 0;
-        if (currentLevel === 2 && platform.underground && platform.h < 60) {
-          player.waterfallFall = false;
-        }
       }
     }
 
