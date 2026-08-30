@@ -1481,6 +1481,41 @@
     ctx.restore();
   }
 
+  function drawLevelTwoPortalAfterglow() {
+    if (currentLevel !== 2 || gameState === "cabin") return;
+    const centerX = level2Portal.x - camera.x + level2Portal.w / 2;
+    const centerY = level2Portal.y - camera.y + level2Portal.h - 64;
+    if (centerX < -180 || centerX > VIEW_W + 180) return;
+    const pulse = .78 + Math.sin(animationTime * 4.2) * .12;
+
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    const aura = ctx.createRadialGradient(centerX, centerY, 10, centerX, centerY, 118);
+    aura.addColorStop(0, `rgba(230, 133, 255, ${.32 * pulse})`);
+    aura.addColorStop(.3, `rgba(176, 68, 255, ${.25 * pulse})`);
+    aura.addColorStop(.62, `rgba(111, 38, 218, ${.13 * pulse})`);
+    aura.addColorStop(1, "rgba(69, 20, 153, 0)");
+    ctx.fillStyle = aura;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 118, 0, Math.PI * 2);
+    ctx.fill();
+
+    const groundY = level2Portal.y - camera.y + level2Portal.h - 1;
+    ctx.save();
+    ctx.translate(centerX, groundY);
+    ctx.scale(1.35, .27);
+    const groundGlow = ctx.createRadialGradient(0, 0, 2, 0, 0, 88);
+    groundGlow.addColorStop(0, `rgba(213, 105, 255, ${.3 * pulse})`);
+    groundGlow.addColorStop(.55, `rgba(143, 52, 238, ${.14 * pulse})`);
+    groundGlow.addColorStop(1, "rgba(89, 25, 180, 0)");
+    ctx.fillStyle = groundGlow;
+    ctx.beginPath();
+    ctx.arc(0, 0, 88, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    ctx.restore();
+  }
+
   function roundedPlatformPath(targetCtx, x, y, width, height, radius = 9) {
     const r = Math.max(0, Math.min(radius, width / 2, height / 2));
     targetCtx.beginPath();
@@ -3330,6 +3365,7 @@
     const caveDepth = Math.max(0, Math.min(1, (player.y - 500) / 220));
     if (currentLevel === 1) drawCaveLighting(caveDepth);
     drawLevelTwoDarkness();
+    drawLevelTwoPortalAfterglow();
     drawLevelTwoSkyEffects();
     ctx.fillStyle = "#13241c66";
     ctx.fillRect(0, VIEW_H - 8, VIEW_W, 8);
