@@ -17,7 +17,7 @@
   const healingFoodSound = new Audio("assets/audio/healing-fruit-bite.mp3?v=20260829-1");
   const mushroomPickupSound = new Audio("assets/audio/mushroom-pickup.mp3?v=20260829-1");
   const portalApproachSound = new Audio("assets/audio/portal-approach-ambience.mp3?v=20260829-2");
-  const flashlightToggleSound = new Audio("assets/audio/flashlight-toggle.mp3?v=20260830-1");
+  const flashlightToggleSound = new Audio("assets/audio/flashlight-toggle.mp3?v=20260830-2");
   const introLogo = new Image();
   introLogo.src = "assets/custom/myko-title-logo.png?v=20260829-1";
   backgroundMusic.loop = true;
@@ -169,7 +169,7 @@
     flashlightToggleSound.pause();
     // Skip the quiet lead-in in the source file so the mechanical click lands
     // on the exact frame where the flashlight changes state.
-    flashlightToggleSound.currentTime = .2;
+    flashlightToggleSound.currentTime = .02;
     flashlightToggleSound.volume = Math.min(1, soundVolume * .34);
     flashlightToggleSound.playbackRate = .72;
     flashlightToggleSound.play().catch(() => {});
