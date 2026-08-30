@@ -1065,7 +1065,9 @@
     const fallingThroughLevelTwoGap = currentLevel === 2 && player.waterfallFall;
 
     for (const platform of level.platforms) {
-      if (fallingThroughLevelTwoGap && platform.underground) continue;
+      // Falling through a waterfall bypasses only the broad cave floor. The
+      // smaller underground rock ledges remain real, walkable platforms.
+      if (fallingThroughLevelTwoGap && platform.underground && platform.h >= 60) continue;
       const overlapsX = player.x + player.w > platform.x && player.x < platform.x + platform.w;
       const crossedTop = previousBottom <= platform.y && player.y + player.h >= platform.y;
       if (!player.climbing && overlapsX && crossedTop && player.vy >= 0) {
@@ -1073,6 +1075,9 @@
         player.vy = 0;
         player.grounded = true;
         player.jumpsUsed = 0;
+        if (currentLevel === 2 && platform.underground && platform.h < 60) {
+          player.waterfallFall = false;
+        }
       }
     }
 
