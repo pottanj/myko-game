@@ -17,6 +17,7 @@
   const healingFoodSound = new Audio("assets/audio/healing-fruit-bite.mp3?v=20260829-1");
   const mushroomPickupSound = new Audio("assets/audio/mushroom-pickup.mp3?v=20260829-1");
   const portalApproachSound = new Audio("assets/audio/portal-approach-ambience.mp3?v=20260829-2");
+  const flashlightToggleSound = new Audio("assets/audio/flashlight-toggle.mp3?v=20260830-1");
   const introLogo = new Image();
   introLogo.src = "assets/custom/myko-title-logo.png?v=20260829-1";
   backgroundMusic.loop = true;
@@ -42,6 +43,9 @@
   portalApproachSound.volume = 0;
   portalApproachSound.playbackRate = .84;
   if ("preservesPitch" in portalApproachSound) portalApproachSound.preservesPitch = false;
+  flashlightToggleSound.preload = "auto";
+  flashlightToggleSound.playbackRate = .72;
+  if ("preservesPitch" in flashlightToggleSound) flashlightToggleSound.preservesPitch = false;
   const savedAudio = JSON.parse(localStorage.getItem("mykoAudioSettings") || "null") || {};
   let musicVolume = Number.isFinite(savedAudio.musicVolume) ? savedAudio.musicVolume : .32;
   let soundVolume = Number.isFinite(savedAudio.soundVolume) ? savedAudio.soundVolume : .7;
@@ -158,6 +162,15 @@
     cabinDoorSound.currentTime = 0;
     cabinDoorSound.volume = Math.min(1, soundVolume * .72);
     cabinDoorSound.play().catch(() => {});
+  }
+
+  function playFlashlightToggleSound() {
+    if (soundMuted || soundVolume <= 0) return;
+    flashlightToggleSound.pause();
+    flashlightToggleSound.currentTime = 0;
+    flashlightToggleSound.volume = Math.min(1, soundVolume * .34);
+    flashlightToggleSound.playbackRate = .72;
+    flashlightToggleSound.play().catch(() => {});
   }
 
   function playPlayerJumpSound() {
@@ -876,6 +889,7 @@
     }
     if (event.code === "KeyF" && gameState === "playing") {
       flashlightEquipped = !flashlightEquipped;
+      playFlashlightToggleSound();
       return;
     }
     if (gameState === "cabin") {
