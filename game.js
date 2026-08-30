@@ -780,6 +780,11 @@
     { x: 2910, y: 455 },
     { x: 3350, y: 455 }
   ];
+  const level2WaterfallHazards = [
+    { x: 1220, w: 70 },
+    { x: 1760, w: 80 },
+    { x: 2290, w: 370 }
+  ];
   const level2SurfaceSpots = [
     [300,429],[730,429],[825,309],[1110,249],[1180,429],
     [1435,319],[1660,429],[1940,309],[2160,239],[2240,429],
@@ -1070,6 +1075,18 @@
         if (basket.brown + basket.yellow + basket.beige === MUSHROOM_GOAL) {
           playMushroomCompletionSound();
         }
+      }
+    }
+
+    // Level-two waterfalls are real open hazards. Myko is safe while jumping
+    // above the lip, but falling below the grass edge starts the death scene.
+    if (currentLevel === 2 && player.y + player.h > 468) {
+      const touchesWaterfall = level2WaterfallHazards.some((waterfall) => (
+        player.x + player.w > waterfall.x + 4 && player.x < waterfall.x + waterfall.w - 4
+      ));
+      if (touchesWaterfall) {
+        triggerGameOver();
+        return;
       }
     }
 
