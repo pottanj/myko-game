@@ -783,6 +783,11 @@
     { x: 2910, y: 455 },
     { x: 3350, y: 455 }
   ];
+  const level2CabinWindows = [
+    { x: 84, y: 284, w: 26, h: 24 },
+    { x: 185, y: 276, w: 27, h: 25 },
+    { x: 79, y: 365, w: 28, h: 25 }
+  ];
   const level2SurfaceSpots = [
     [300,429],[730,429],[825,309],[1110,249],[1180,429],
     [1435,319],[1660,429],[1940,309],[2160,239],[2240,429],
@@ -2027,6 +2032,26 @@
         ctx.drawImage(interactiveSprites.cabin, x, y, cabin.w, cabin.h);
       }
       ctx.restore();
+      if (currentLevel === 2) {
+        const windowFlicker = .72 + Math.sin(animationTime * 6.8) * .07;
+        ctx.save();
+        ctx.globalCompositeOperation = "screen";
+        for (const window of level2CabinWindows) {
+          const windowX = Math.round(window.x - camera.x);
+          const windowY = Math.round(window.y - camera.y);
+          const glow = ctx.createRadialGradient(
+            windowX + window.w / 2, windowY + window.h / 2, 2,
+            windowX + window.w / 2, windowY + window.h / 2, 48
+          );
+          glow.addColorStop(0, `rgba(255, 218, 118, ${.28 * windowFlicker})`);
+          glow.addColorStop(1, "rgba(255, 150, 42, 0)");
+          ctx.fillStyle = glow;
+          ctx.fillRect(windowX - 35, windowY - 35, window.w + 70, window.h + 70);
+          ctx.fillStyle = `rgba(255, 207, 91, ${.42 * windowFlicker})`;
+          ctx.fillRect(windowX, windowY, window.w, window.h);
+        }
+        ctx.restore();
+      }
       if (nearCabinDoor() && gameState === "playing") {
         ctx.fillStyle = "#182019e6";
         ctx.fillRect(doorX - 21, doorY - 36, 90, 26);
@@ -2786,6 +2811,33 @@
       lightingCtx.fill();
       lightingCtx.filter = "none";
       lightingCtx.restore();
+
+      // Reveal the fire and glass themselves without leaking through the cap.
+      lightingCtx.save();
+      lightingCtx.beginPath();
+      lightingCtx.rect(lx - 22, ly - 8, 44, 35);
+      lightingCtx.clip();
+      const glassGlow = lightingCtx.createRadialGradient(lx, ly + 3, 2, lx, ly + 3, 27);
+      const glassStrength = index === 0 ? .72 : .58;
+      glassGlow.addColorStop(0, `rgba(0,0,0,${glassStrength})`);
+      glassGlow.addColorStop(1, "rgba(0,0,0,0)");
+      lightingCtx.fillStyle = glassGlow;
+      lightingCtx.fillRect(lx - 28, ly - 10, 56, 45);
+      lightingCtx.restore();
+    }
+
+    // Warm windows illuminate the cabin façade and a small patch below each
+    // sill, but never punch through the roof or create full-screen ambience.
+    for (const window of level2CabinWindows) {
+      const wx = window.x - camera.x + window.w / 2;
+      const wy = window.y - camera.y + window.h / 2;
+      if (wx < -100 || wx > VIEW_W + 100) continue;
+      const windowGlow = lightingCtx.createRadialGradient(wx, wy, 3, wx, wy, 58);
+      windowGlow.addColorStop(0, "rgba(0,0,0,.62)");
+      windowGlow.addColorStop(.48, "rgba(0,0,0,.28)");
+      windowGlow.addColorStop(1, "rgba(0,0,0,0)");
+      lightingCtx.fillStyle = windowGlow;
+      lightingCtx.fillRect(wx - 60, wy - 50, 120, 105);
     }
     lightingCtx.globalCompositeOperation = "source-over";
 
