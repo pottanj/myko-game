@@ -487,11 +487,19 @@
   const background2 = loadOriginal("backgrounds/-2.png");
   const background3 = loadOriginal("backgrounds/-3.png");
   const background4 = loadOriginal("backgrounds/-4.png");
+  const level2Background4 = new Image();
+  level2Background4.src = "assets/custom/level2_background_-4_night.jpg?v=20260830-1";
   const backgroundSprites = [
     { image: parallaxForegroundCanvas, fixedWidth: 228, fixedHeight: 42, ready: () => parallaxForegroundReady },
     { image: background2, scale: .52, yOffset: -12, ready: () => background2.complete && background2.naturalWidth },
     { image: background3, scale: .72, ready: () => background3.complete && background3.naturalWidth },
     { image: background4, scale: .72, ready: () => background4.complete && background4.naturalWidth }
+  ];
+  const level2BackgroundSprites = [
+    backgroundSprites[0],
+    backgroundSprites[1],
+    backgroundSprites[2],
+    { image: level2Background4, scale: .72, ready: () => level2Background4.complete && level2Background4.naturalWidth }
   ];
   const uiSprites = {
     heart: loadOriginal("UI/heart.png"),
@@ -1305,16 +1313,17 @@
 
   function drawBackground() {
     const sky = ctx.createLinearGradient(0, 0, 0, VIEW_H);
-    sky.addColorStop(0, "#233f40");
-    sky.addColorStop(1, "#dfa765");
+    sky.addColorStop(0, currentLevel === 2 ? "#020817" : "#233f40");
+    sky.addColorStop(1, currentLevel === 2 ? "#143440" : "#dfa765");
     ctx.fillStyle = sky;
     ctx.fillRect(0, 0, VIEW_W, VIEW_H);
 
-    const originalsReady = backgroundSprites.every(({ ready }) => ready());
+    const activeBackgroundSprites = currentLevel === 2 ? level2BackgroundSprites : backgroundSprites;
+    const originalsReady = activeBackgroundSprites.every(({ ready }) => ready());
     if (originalsReady) {
-      for (let index = backgroundSprites.length - 1; index >= 0; index--) {
-        const { image, scale, fixedWidth, fixedHeight, yOffset = 0 } = backgroundSprites[index];
-        const parallax = .28 + (backgroundSprites.length - 1 - index) * .18;
+      for (let index = activeBackgroundSprites.length - 1; index >= 0; index--) {
+        const { image, scale, fixedWidth, fixedHeight, yOffset = 0 } = activeBackgroundSprites[index];
+        const parallax = .28 + (activeBackgroundSprites.length - 1 - index) * .18;
         const width = fixedWidth ?? Math.round(WORLD_W * scale);
         const sourceWidth = image.naturalWidth || image.width;
         const sourceHeight = image.naturalHeight || image.height;
@@ -1352,7 +1361,7 @@
           ctx.fillRect(0, Math.max(0, layerY), VIEW_W, VIEW_H - 95 - Math.max(0, layerY));
         }
       }
-      drawAnimatedGrassSunlight();
+      if (currentLevel === 1) drawAnimatedGrassSunlight();
       return;
     }
 
@@ -1414,6 +1423,60 @@
       ctx.fillRect(x + pixel + 1, y + wingLift, pixel * 2, pixel);
       ctx.fillRect(x - pixel * 2, y + Math.sign(wingLift || 1) * pixel, pixel, pixel);
       ctx.fillRect(x + pixel * 2, y + Math.sign(wingLift || 1) * pixel, pixel, pixel);
+    }
+    ctx.restore();
+  }
+
+  function drawLevelTwoSkyEffects() {
+    if (currentLevel !== 2 || gameState === "cabin") return;
+    const stars = [
+      [82, 76, .9], [174, 131, .65], [286, 58, .72], [398, 168, .8],
+      [515, 92, .62], [633, 147, .74], [742, 65, .88], [861, 118, .68]
+    ];
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    for (let index = 0; index < stars.length; index++) {
+      const [baseX, y, strength] = stars[index];
+      const x = ((baseX - camera.x * .045) % (VIEW_W + 80) + VIEW_W + 80) % (VIEW_W + 80) - 40;
+      const pulse = .42 + (Math.sin(animationTime * (1.2 + index * .07) + index * 1.8) + 1) * .18;
+      const radius = 7 + strength * 7;
+      const glow = ctx.createRadialGradient(x, y, 0, x, y, radius);
+      glow.addColorStop(0, `rgba(220, 239, 255, ${pulse * strength})`);
+      glow.addColorStop(.28, `rgba(151, 202, 255, ${pulse * strength * .42})`);
+      glow.addColorStop(1, "rgba(83, 145, 220, 0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = `rgba(232, 246, 255, ${.5 + pulse * .3})`;
+      ctx.fillRect(Math.round(x), Math.round(y), 2, 2);
+    }
+
+    // A brief shooting star crosses the far sky, followed by a long pause.
+    const shootingCycle = animationTime % 19;
+    if (shootingCycle < 1.35) {
+      const progress = shootingCycle / 1.35;
+      const headX = 770 - progress * 410;
+      const headY = 48 + progress * 150;
+      const tailX = headX + 92;
+      const tailY = headY - 34;
+      const trail = ctx.createLinearGradient(tailX, tailY, headX, headY);
+      trail.addColorStop(0, "rgba(116, 177, 235, 0)");
+      trail.addColorStop(.72, "rgba(179, 219, 255, .34)");
+      trail.addColorStop(1, "rgba(245, 251, 255, .92)");
+      ctx.strokeStyle = trail;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(tailX, tailY);
+      ctx.lineTo(headX, headY);
+      ctx.stroke();
+      const headGlow = ctx.createRadialGradient(headX, headY, 0, headX, headY, 11);
+      headGlow.addColorStop(0, "rgba(255,255,255,.95)");
+      headGlow.addColorStop(1, "rgba(120,190,255,0)");
+      ctx.fillStyle = headGlow;
+      ctx.beginPath();
+      ctx.arc(headX, headY, 11, 0, Math.PI * 2);
+      ctx.fill();
     }
     ctx.restore();
   }
@@ -3267,6 +3330,7 @@
     const caveDepth = Math.max(0, Math.min(1, (player.y - 500) / 220));
     if (currentLevel === 1) drawCaveLighting(caveDepth);
     drawLevelTwoDarkness();
+    drawLevelTwoSkyEffects();
     ctx.fillStyle = "#13241c66";
     ctx.fillRect(0, VIEW_H - 8, VIEW_W, 8);
     drawHud();
