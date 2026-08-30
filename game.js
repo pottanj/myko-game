@@ -17,7 +17,8 @@
   const healingFoodSound = new Audio("assets/audio/healing-fruit-bite.mp3?v=20260829-1");
   const mushroomPickupSound = new Audio("assets/audio/mushroom-pickup.mp3?v=20260829-1");
   const portalApproachSound = new Audio("assets/audio/portal-approach-ambience.mp3?v=20260829-2");
-  const flashlightToggleSound = new Audio("assets/audio/flashlight-toggle.mp3?v=20260830-2");
+  const flashlightToggleSoundSource = "assets/audio/flashlight-toggle.mp3?v=20260830-2";
+  const flashlightToggleSound = new Audio(flashlightToggleSoundSource);
   const introLogo = new Image();
   introLogo.src = "assets/custom/myko-title-logo.png?v=20260829-1";
   backgroundMusic.loop = true;
@@ -60,6 +61,9 @@
   let portalApproachVolume = 0;
   let healingFoodStopTimer = 0;
   let completionAudioContext = null;
+  let flashlightAudioContext = null;
+  let flashlightToggleBuffer = null;
+  let flashlightToggleOffset = .45;
   let birdFlightTime = 0;
   let surfaceMusicMix = 1;
   let caveMusicMix = 0;
@@ -164,8 +168,57 @@
     cabinDoorSound.play().catch(() => {});
   }
 
+  async function prepareFlashlightToggleSound() {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass || flashlightToggleBuffer) return;
+    try {
+      flashlightAudioContext ||= new AudioContextClass();
+      const response = await fetch(flashlightToggleSoundSource);
+      const encodedAudio = await response.arrayBuffer();
+      const decodedAudio = await flashlightAudioContext.decodeAudioData(encodedAudio.slice(0));
+      const blockSize = 128;
+      const envelope = [];
+      let peakRms = 0;
+      for (let start = 0; start < decodedAudio.length; start += blockSize) {
+        let sum = 0;
+        let samples = 0;
+        const end = Math.min(decodedAudio.length, start + blockSize);
+        for (let channelIndex = 0; channelIndex < decodedAudio.numberOfChannels; channelIndex++) {
+          const channel = decodedAudio.getChannelData(channelIndex);
+          for (let sample = start; sample < end; sample++) {
+            sum += channel[sample] * channel[sample];
+            samples += 1;
+          }
+        }
+        const rms = Math.sqrt(sum / Math.max(1, samples));
+        envelope.push(rms);
+        peakRms = Math.max(peakRms, rms);
+      }
+      const onsetBlock = envelope.findIndex((rms) => rms >= peakRms * .08);
+      if (onsetBlock >= 0) {
+        flashlightToggleOffset = Math.max(.02, onsetBlock * blockSize / decodedAudio.sampleRate - .006);
+      }
+      flashlightToggleBuffer = decodedAudio;
+    } catch (_) {
+      // The HTMLAudio fallback below still works when local file security
+      // prevents fetching and decoding the asset.
+    }
+  }
+
   function playFlashlightToggleSound() {
     if (soundMuted || soundVolume <= 0) return;
+    if (flashlightAudioContext && flashlightToggleBuffer) {
+      flashlightAudioContext.resume().catch(() => {});
+      const source = flashlightAudioContext.createBufferSource();
+      const gain = flashlightAudioContext.createGain();
+      source.buffer = flashlightToggleBuffer;
+      source.playbackRate.value = .72;
+      gain.gain.value = Math.min(1, soundVolume * .34);
+      source.connect(gain);
+      gain.connect(flashlightAudioContext.destination);
+      source.start(0, flashlightToggleOffset);
+      return;
+    }
     flashlightToggleSound.pause();
     // Skip the quiet lead-in in the source file so the mechanical click lands
     // on the exact frame where the flashlight changes state.
@@ -174,6 +227,8 @@
     flashlightToggleSound.playbackRate = .72;
     flashlightToggleSound.play().catch(() => {});
   }
+
+  prepareFlashlightToggleSound();
 
   function playPlayerJumpSound() {
     if (soundMuted || soundVolume <= 0) return;
