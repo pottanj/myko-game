@@ -1429,6 +1429,10 @@
 
   function drawLevelTwoSkyEffects() {
     if (currentLevel !== 2 || gameState === "cabin") return;
+    // The stars belong to the open night sky only. Fade them away before the
+    // camera reaches the underground section so they never float in the cave.
+    const skyVisibility = Math.max(0, Math.min(1, 1 - camera.y / 105));
+    if (skyVisibility <= 0) return;
     const stars = [
       [82, 76, .9], [174, 131, .65], [286, 58, .72], [398, 168, .8],
       [515, 92, .62], [633, 147, .74], [742, 65, .88], [861, 118, .68]
@@ -1438,18 +1442,18 @@
     for (let index = 0; index < stars.length; index++) {
       const [baseX, y, strength] = stars[index];
       const x = ((baseX - camera.x * .045) % (VIEW_W + 80) + VIEW_W + 80) % (VIEW_W + 80) - 40;
-      const pulse = .42 + (Math.sin(animationTime * (1.2 + index * .07) + index * 1.8) + 1) * .18;
-      const radius = 7 + strength * 7;
+      const pulse = (.22 + (Math.sin(animationTime * (.72 + index * .035) + index * 1.8) + 1) * .065) * skyVisibility;
+      const radius = 2.4 + strength * 1.8;
       const glow = ctx.createRadialGradient(x, y, 0, x, y, radius);
-      glow.addColorStop(0, `rgba(220, 239, 255, ${pulse * strength})`);
-      glow.addColorStop(.28, `rgba(151, 202, 255, ${pulse * strength * .42})`);
+      glow.addColorStop(0, `rgba(220, 232, 244, ${pulse * strength})`);
+      glow.addColorStop(.34, `rgba(151, 181, 211, ${pulse * strength * .22})`);
       glow.addColorStop(1, "rgba(83, 145, 220, 0)");
       ctx.fillStyle = glow;
       ctx.beginPath();
       ctx.arc(x, y, radius, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = `rgba(232, 246, 255, ${.5 + pulse * .3})`;
-      ctx.fillRect(Math.round(x), Math.round(y), 2, 2);
+      ctx.fillStyle = `rgba(226, 235, 242, ${.3 * strength * skyVisibility})`;
+      ctx.fillRect(Math.round(x), Math.round(y), 1, 1);
     }
 
     // A brief shooting star crosses the far sky, followed by a long pause.
@@ -1462,20 +1466,20 @@
       const tailY = headY - 34;
       const trail = ctx.createLinearGradient(tailX, tailY, headX, headY);
       trail.addColorStop(0, "rgba(116, 177, 235, 0)");
-      trail.addColorStop(.72, "rgba(179, 219, 255, .34)");
-      trail.addColorStop(1, "rgba(245, 251, 255, .92)");
+      trail.addColorStop(.72, `rgba(179, 205, 228, ${.2 * skyVisibility})`);
+      trail.addColorStop(1, `rgba(235, 241, 246, ${.62 * skyVisibility})`);
       ctx.strokeStyle = trail;
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(tailX, tailY);
       ctx.lineTo(headX, headY);
       ctx.stroke();
-      const headGlow = ctx.createRadialGradient(headX, headY, 0, headX, headY, 11);
-      headGlow.addColorStop(0, "rgba(255,255,255,.95)");
-      headGlow.addColorStop(1, "rgba(120,190,255,0)");
+      const headGlow = ctx.createRadialGradient(headX, headY, 0, headX, headY, 4);
+      headGlow.addColorStop(0, `rgba(241,245,248,${.68 * skyVisibility})`);
+      headGlow.addColorStop(1, "rgba(120,170,210,0)");
       ctx.fillStyle = headGlow;
       ctx.beginPath();
-      ctx.arc(headX, headY, 11, 0, Math.PI * 2);
+      ctx.arc(headX, headY, 4, 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.restore();
