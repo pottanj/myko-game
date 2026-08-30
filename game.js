@@ -721,72 +721,79 @@
 
   const level2Portal = { x: 3480, y: 365, w: 58, h: 90 };
   const level2Platforms = [
-    { x: 0, y: 455, w: 390, h: 85 },
-    { x: 390, y: 405, w: 135, h: 135 },
-    { x: 515, y: 350, w: 135, h: 190 },
-    { x: 640, y: 295, w: 145, h: 245 },
-    { x: 775, y: 245, w: 210, h: 295 },
-    { x: 900, y: 350, w: 140, h: 190 },
-    { x: 1030, y: 410, w: 572, h: 18, bridge: true },
-    { x: 1600, y: 455, w: 700, h: 85 },
-    { x: 2300, y: 600, w: 360, h: 60, underground: true },
+    // Level two deliberately uses the same calm visual rhythm as level one:
+    // one readable ground line, a few airy root ledges and clear cave routes.
+    { x: 0, y: 455, w: 620, h: 85 },
+    { x: 700, y: 455, w: 520, h: 85 },
+    { x: 1290, y: 455, w: 470, h: 85 },
+    { x: 1840, y: 455, w: 450, h: 85 },
     { x: 2660, y: 455, w: 940, h: 85 },
-    { x: 300, y: 720, w: 700, h: 70, underground: true },
-    { x: 1000, y: 820, w: 720, h: 80, underground: true },
-    { x: 1720, y: 820, w: 1030, h: 80, underground: true },
-    { x: 2750, y: 820, w: 250, h: 80, underground: true },
-    { x: 690, y: 630, w: 150, h: 24, underground: true },
-    { x: 1040, y: 710, w: 150, h: 24, underground: true },
-    { x: 1520, y: 710, w: 145, h: 24, underground: true },
-    { x: 2050, y: 710, w: 145, h: 24, underground: true }
+    { x: 760, y: 335, w: 190, h: 28, rockAsset: 1 },
+    { x: 1050, y: 275, w: 165, h: 28, rockAsset: 3 },
+    { x: 1390, y: 345, w: 210, h: 28, rockAsset: 0 },
+    { x: 1900, y: 335, w: 185, h: 28, rockAsset: 4 },
+    { x: 2120, y: 265, w: 170, h: 28, rockAsset: 5 },
+    { x: 2840, y: 340, w: 190, h: 28, rockAsset: 2 },
+    { x: 3140, y: 285, w: 175, h: 28, rockAsset: 3 },
+    { x: 300, y: 820, w: 750, h: 90, underground: true },
+    { x: 1050, y: 820, w: 750, h: 90, underground: true },
+    { x: 1800, y: 820, w: 500, h: 90, underground: true },
+    { x: 2300, y: 600, w: 360, h: 70, underground: true },
+    { x: 2660, y: 820, w: 380, h: 90, underground: true },
+    { x: 720, y: 700, w: 155, h: 24, underground: true },
+    { x: 1110, y: 710, w: 155, h: 24, underground: true },
+    { x: 1510, y: 690, w: 155, h: 24, underground: true },
+    { x: 1970, y: 710, w: 155, h: 24, underground: true }
   ];
   const level2Ladders = [
-    { x: 345, y: 430, w: 48, h: 290 },
-    { x: 2610, y: 455, w: 48, h: 145 },
-    { x: 2780, y: 430, w: 48, h: 390 }
+    { x: 626, y: 430, w: 48, h: 390 },
+    { x: 2296, y: 430, w: 48, h: 170 },
+    { x: 2612, y: 455, w: 48, h: 365 }
   ];
   const level2Trees = [
-    { x: 210, y: 455, scale: .76, variant: 1 },
-    { x: 720, y: 295, scale: .9, variant: 2 },
-    { x: 1260, y: 410, scale: .72, variant: 0 },
-    { x: 1810, y: 455, scale: 1.02, variant: 0 },
-    { x: 2110, y: 455, scale: 1.04, variant: 1 },
-    { x: 2840, y: 455, scale: .78, variant: 0 },
-    { x: 3040, y: 455, scale: 1, variant: 2 },
-    { x: 3400, y: 455, scale: .8, variant: 1 }
+    { x: 190, y: 455, scale: .78, variant: 2 },
+    { x: 520, y: 455, scale: .88, variant: 0 },
+    { x: 1010, y: 455, scale: .8, variant: 1 },
+    { x: 1330, y: 455, scale: .82, variant: 2 },
+    { x: 1730, y: 455, scale: .9, variant: 0 },
+    { x: 2050, y: 455, scale: 1.02, variant: 1 },
+    { x: 2780, y: 455, scale: .8, variant: 0 },
+    { x: 3070, y: 455, scale: .94, variant: 2 },
+    { x: 3370, y: 455, scale: .76, variant: 1 }
   ];
   const level2Bushes = [
-    { x: 250, y: 455, scale: .9, variant: 2 },
-    { x: 560, y: 350, scale: .72, variant: 0 },
-    { x: 1180, y: 410, scale: .76, variant: 2 },
-    { x: 1700, y: 455, scale: 1, variant: 0 },
-    { x: 2180, y: 455, scale: 1.08, variant: 1 },
-    { x: 2740, y: 455, scale: .8, variant: 1 },
-    { x: 2910, y: 455, scale: 1, variant: 2 },
-    { x: 3290, y: 455, scale: .78, variant: 0 }
+    { x: 270, y: 455, scale: .78, variant: 2 },
+    { x: 760, y: 455, scale: .74, variant: 0 },
+    { x: 1160, y: 455, scale: .78, variant: 1 },
+    { x: 1460, y: 455, scale: .82, variant: 2 },
+    { x: 1880, y: 455, scale: .8, variant: 0 },
+    { x: 2180, y: 455, scale: .86, variant: 1 },
+    { x: 2740, y: 455, scale: .78, variant: 2 },
+    { x: 2970, y: 455, scale: .82, variant: 0 },
+    { x: 3260, y: 455, scale: .8, variant: 1 }
   ];
   const level2SurfaceSpots = [
-    [270,429],[415,379],[540,324],[665,269],[805,219],
-    [935,324],[1625,429],[1740,429],[1880,429],[2020,429],
-    [2180,429],[2690,429],[2910,429],[3160,429],[3380,429]
+    [300,429],[730,429],[825,309],[1110,249],[1180,429],
+    [1435,319],[1660,429],[1940,309],[2160,239],[2240,429],
+    [2700,429],[2890,314],[3080,429],[3195,259],[3400,429]
   ];
   const level2TunnelSpots = [
-    [420,694],[560,694],[710,604],[850,694],[970,694],
-    [1060,794],[1200,794],[1360,794],[1535,684],[1680,794],
-    [1840,794],[2020,684],[2210,794],[2630,794],[2840,794]
+    [340,794],[480,794],[620,794],[745,674],[900,794],
+    [1080,794],[1140,684],[1280,794],[1535,664],[1700,794],
+    [1840,794],[1995,684],[2180,794],[2380,574],[2740,794]
   ];
   const level2Items = [
     ...makeMushrooms(level2SurfaceSpots, "surface"),
     ...makeMushrooms(level2TunnelSpots, "tunnel"),
-    { type: "fly", x: 850, y: 219, w: 24, h: 26 },
-    { type: "fly", x: 1950, y: 429, w: 24, h: 26 },
-    { type: "fly", x: 1460, y: 794, w: 24, h: 26 },
+    { type: "fly", x: 880, y: 309, w: 24, h: 26 },
+    { type: "fly", x: 2010, y: 309, w: 24, h: 26 },
+    { type: "fly", x: 1430, y: 794, w: 24, h: 26 },
     { type: "berry", x: 285, y: 400, w: 18, h: 20 },
-    { type: "berry", x: 1740, y: 400, w: 18, h: 20 },
-    { type: "berry", x: 2224, y: 400, w: 18, h: 20 },
-    { type: "berry", x: 2950, y: 400, w: 18, h: 20 },
+    { type: "berry", x: 1475, y: 400, w: 18, h: 20 },
+    { type: "berry", x: 2195, y: 400, w: 18, h: 20 },
+    { type: "berry", x: 2985, y: 400, w: 18, h: 20 },
     // Apples only grow on the gnarled broadleaf tree (tree variant 1).
-    { type: "apple", x: 2120, y: 242, w: 20, h: 24 }
+    { type: "apple", x: 2055, y: 245, w: 20, h: 24 }
   ];
 
   function levelData() {
