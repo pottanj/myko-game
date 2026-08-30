@@ -167,7 +167,9 @@
   function playFlashlightToggleSound() {
     if (soundMuted || soundVolume <= 0) return;
     flashlightToggleSound.pause();
-    flashlightToggleSound.currentTime = 0;
+    // Skip the quiet lead-in in the source file so the mechanical click lands
+    // on the exact frame where the flashlight changes state.
+    flashlightToggleSound.currentTime = .2;
     flashlightToggleSound.volume = Math.min(1, soundVolume * .34);
     flashlightToggleSound.playbackRate = .72;
     flashlightToggleSound.play().catch(() => {});
