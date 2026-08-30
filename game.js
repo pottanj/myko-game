@@ -2696,7 +2696,7 @@
 
     lightingCtx.clearRect(0, 0, VIEW_W, VIEW_H);
     lightingCtx.globalCompositeOperation = "source-over";
-    lightingCtx.fillStyle = flashlightEquipped ? "rgba(1, 5, 9, .88)" : "rgba(0, 2, 5, .965)";
+    lightingCtx.fillStyle = flashlightEquipped ? "rgba(1, 5, 9, .93)" : "rgba(0, 2, 5, .965)";
     lightingCtx.fillRect(0, 0, VIEW_W, VIEW_H);
 
     if (flashlightEquipped) {
@@ -2705,29 +2705,19 @@
       const direction = player.facing || 1;
       lightingCtx.globalCompositeOperation = "destination-out";
 
-      // A small pool keeps Myko readable while the long cone makes direction
-      // and exploration matter throughout the dark second level.
-      const halo = lightingCtx.createRadialGradient(px, py, 6, px, py, 88);
-      halo.addColorStop(0, "rgba(0,0,0,.96)");
-      halo.addColorStop(.55, "rgba(0,0,0,.62)");
-      halo.addColorStop(1, "rgba(0,0,0,0)");
-      lightingCtx.fillStyle = halo;
-      lightingCtx.beginPath();
-      lightingCtx.arc(px, py, 88, 0, Math.PI * 2);
-      lightingCtx.fill();
-
       lightingCtx.save();
-      lightingCtx.filter = "blur(24px)";
-      const beam = lightingCtx.createLinearGradient(px, py, px + direction * 520, py);
-      beam.addColorStop(0, "rgba(0,0,0,1)");
-      beam.addColorStop(.62, "rgba(0,0,0,.9)");
+      lightingCtx.filter = "blur(14px)";
+      const beamStartX = px + direction * 24;
+      const beam = lightingCtx.createLinearGradient(beamStartX, py, px + direction * 345, py);
+      beam.addColorStop(0, "rgba(0,0,0,.7)");
+      beam.addColorStop(.58, "rgba(0,0,0,.56)");
       beam.addColorStop(1, "rgba(0,0,0,0)");
       lightingCtx.fillStyle = beam;
       lightingCtx.beginPath();
-      lightingCtx.moveTo(px + direction * 2, py - 16);
-      lightingCtx.lineTo(px + direction * 520, py - 190);
-      lightingCtx.lineTo(px + direction * 520, py + 190);
-      lightingCtx.lineTo(px + direction * 2, py + 16);
+      lightingCtx.moveTo(beamStartX, py - 9);
+      lightingCtx.lineTo(px + direction * 345, py - 105);
+      lightingCtx.lineTo(px + direction * 345, py + 105);
+      lightingCtx.lineTo(beamStartX, py + 9);
       lightingCtx.closePath();
       lightingCtx.fill();
       lightingCtx.restore();
@@ -3132,7 +3122,7 @@
     else drawPlayer();
     drawFloatingFeedback();
     const caveDepth = Math.max(0, Math.min(1, (player.y - 500) / 220));
-    drawCaveLighting(caveDepth);
+    if (currentLevel === 1) drawCaveLighting(caveDepth);
     drawLevelTwoDarkness();
     ctx.fillStyle = "#13241c66";
     ctx.fillRect(0, VIEW_H - 8, VIEW_W, 8);
