@@ -741,7 +741,6 @@
     { x: 300, y: 820, w: 750, h: 90, underground: true },
     { x: 1050, y: 820, w: 750, h: 90, underground: true },
     { x: 1800, y: 820, w: 500, h: 90, underground: true },
-    { x: 2300, y: 600, w: 360, h: 70, underground: true },
     { x: 2660, y: 820, w: 380, h: 90, underground: true },
     { x: 720, y: 700, w: 155, h: 24, underground: true },
     { x: 1110, y: 710, w: 155, h: 24, underground: true },
@@ -749,9 +748,7 @@
     { x: 1970, y: 710, w: 155, h: 24, underground: true }
   ];
   const level2Ladders = [
-    { x: 626, y: 430, w: 48, h: 390 },
-    { x: 2296, y: 430, w: 48, h: 170 },
-    { x: 2612, y: 455, w: 48, h: 365 }
+    { x: 626, y: 430, w: 48, h: 390 }
   ];
   const level2Trees = [
     { x: 190, y: 455, scale: .78, variant: 2 },
@@ -783,11 +780,6 @@
     { x: 2910, y: 455 },
     { x: 3350, y: 455 }
   ];
-  const level2CabinWindows = [
-    { x: 88, y: 261, w: 17, h: 23 },
-    { x: 195, y: 258, w: 20, h: 25 },
-    { x: 94, y: 342, w: 19, h: 24 }
-  ];
   const level2SurfaceSpots = [
     [300,429],[730,429],[825,309],[1110,249],[1180,429],
     [1435,319],[1660,429],[1940,309],[2160,239],[2240,429],
@@ -796,7 +788,7 @@
   const level2TunnelSpots = [
     [340,794],[480,794],[620,794],[745,674],[900,794],
     [1080,794],[1140,684],[1280,794],[1535,664],[1700,794],
-    [1840,794],[1995,684],[2180,794],[2380,574],[2740,794]
+    [1840,794],[1995,684],[2180,794],[2240,794],[2740,794]
   ];
   const level2Items = [
     ...makeMushrooms(level2SurfaceSpots, "surface"),
@@ -1083,7 +1075,7 @@
 
     const bearBounds = currentLevel === 1
       ? { min: 1370, max: 2960, pitMin: 1350, pitMax: 3040, pitTop: 700 }
-      : { min: 2310, max: 2575, pitMin: 2300, pitMax: 2660, pitTop: 470 };
+      : { min: 700, max: 3380, pitMin: 0, pitMax: WORLD_W, pitTop: 300 };
     const playerCenter = player.x + player.w / 2;
     const playerInBearPit = playerCenter >= bearBounds.pitMin && playerCenter <= bearBounds.pitMax && player.y > bearBounds.pitTop;
     bear.awake = playerInBearPit;
@@ -1181,7 +1173,7 @@
   function resetBear() {
     Object.assign(bear, currentLevel === 1
       ? { x: 2360, y: 770, vx: 0, awake: false, patrolDirection: 1 }
-      : { x: 2415, y: 550, vx: 0, awake: false, patrolDirection: 1 });
+      : { x: 1760, y: 405, vx: 0, awake: false, patrolDirection: 1 });
   }
 
   function switchLevel() {
@@ -1199,6 +1191,7 @@
   }
 
   function nearCabinDoor() {
+    if (currentLevel !== 1) return false;
     const centerX = player.x + player.w / 2;
     return Math.abs(centerX - (cabin.doorX + cabin.doorW / 2)) < 58 && player.y > 350;
   }
@@ -1837,12 +1830,13 @@
       const gapStart = left.x + left.w;
       const gapEnd = right.x;
       const gapWidth = gapEnd - gapStart;
-      if (gapWidth < 28 || gapWidth > 150) continue;
+      const isLevelTwoBearWaterfall = currentLevel === 2 && gapStart === 2290 && gapEnd === 2660;
+      if (!isLevelTwoBearWaterfall && (gapWidth < 28 || gapWidth > 150)) continue;
       const containsLadder = data.ladders.some((ladder) => {
         const center = ladder.x + ladder.w / 2;
         return center > gapStart - 8 && center < gapEnd + 8;
       });
-      if (containsLadder) continue;
+      if (containsLadder && !isLevelTwoBearWaterfall) continue;
 
       const x = Math.round(gapStart - camera.x);
       const y = Math.round(Math.min(left.y, right.y) - camera.y);
@@ -1882,18 +1876,25 @@
         const flowTop = y - 13 + lipHeight;
         const flowHeight = height + 18 - lipHeight;
         ctx.globalAlpha = .9;
-        ctx.drawImage(
-          waterfallFrame,
-          sourceX, lipSourceY, sourceWidth, lipSourceHeight,
-          x, y - 13, width, lipHeight
-        );
-        // One continuous texture covers the entire fall. Repeating short
-        // strips created a visible horizontal seam travelling downward.
-        ctx.drawImage(
-          waterfallFrame,
-          sourceX, flowSourceY, sourceWidth, flowSourceHeight,
-          x, flowTop, width, flowHeight
-        );
+        if (isLevelTwoBearWaterfall) {
+          const tileWidth = 82;
+          for (let tileX = x; tileX < x + width; tileX += tileWidth) {
+            const drawWidth = Math.min(tileWidth + 1, x + width - tileX);
+            ctx.drawImage(waterfallFrame, sourceX, lipSourceY, sourceWidth, lipSourceHeight, tileX, y - 13, drawWidth, lipHeight);
+            ctx.drawImage(waterfallFrame, sourceX, flowSourceY, sourceWidth, flowSourceHeight, tileX, flowTop, drawWidth, flowHeight);
+          }
+        } else {
+          ctx.drawImage(
+            waterfallFrame,
+            sourceX, lipSourceY, sourceWidth, lipSourceHeight,
+            x, y - 13, width, lipHeight
+          );
+          ctx.drawImage(
+            waterfallFrame,
+            sourceX, flowSourceY, sourceWidth, flowSourceHeight,
+            x, flowTop, width, flowHeight
+          );
+        }
         ctx.globalAlpha = 1;
 
         // Clearly visible but soft ribbons move downward at varied speeds.
@@ -2032,27 +2033,6 @@
         ctx.drawImage(interactiveSprites.cabin, x, y, cabin.w, cabin.h);
       }
       ctx.restore();
-      if (currentLevel === 2) {
-        const windowFlicker = .72 + Math.sin(animationTime * 6.8) * .07;
-        ctx.save();
-        ctx.globalCompositeOperation = "screen";
-        for (const window of level2CabinWindows) {
-          const windowX = Math.round(window.x - camera.x);
-          const windowY = Math.round(window.y - camera.y);
-          const glow = ctx.createRadialGradient(
-            windowX + window.w / 2, windowY + window.h / 2, 2,
-            windowX + window.w / 2, windowY + window.h / 2, 42
-          );
-          glow.addColorStop(0, `rgba(255, 218, 118, ${.23 * windowFlicker})`);
-          glow.addColorStop(.46, `rgba(255, 180, 70, ${.1 * windowFlicker})`);
-          glow.addColorStop(1, "rgba(255, 150, 42, 0)");
-          ctx.fillStyle = glow;
-          ctx.beginPath();
-          ctx.arc(windowX + window.w / 2, windowY + window.h / 2, 42, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        ctx.restore();
-      }
       if (nearCabinDoor() && gameState === "playing") {
         ctx.fillStyle = "#182019e6";
         ctx.fillRect(doorX - 21, doorY - 36, 90, 26);
@@ -2472,7 +2452,7 @@
 
   function drawBear() {
     const x = Math.round(bear.x - camera.x);
-    const y = Math.round(bear.y - camera.y + CAVE_BEAR_VISUAL_SINK);
+    const y = Math.round(bear.y - camera.y + (currentLevel === 1 ? CAVE_BEAR_VISUAL_SINK : 0));
     const direction = bear.vx < 0 ? "left" : "right";
     const frames = bear.awake ? bearSpriteSet.angry[direction] : bearSpriteSet.neutral[direction];
     const frameRate = bear.awake ? 8 : 2.5;
@@ -2827,25 +2807,20 @@
       lightingCtx.restore();
     }
 
-    // Warm windows illuminate the cabin façade and a small patch below each
-    // sill, but never punch through the roof or create full-screen ambience.
-    for (const window of level2CabinWindows) {
-      const wx = window.x - camera.x + window.w / 2;
-      const wy = window.y - camera.y + window.h / 2;
-      if (wx < -100 || wx > VIEW_W + 100) continue;
-      const windowGlow = lightingCtx.createRadialGradient(wx, wy, 3, wx, wy, 58);
-      windowGlow.addColorStop(0, "rgba(0,0,0,.56)");
-      windowGlow.addColorStop(.42, "rgba(0,0,0,.22)");
-      windowGlow.addColorStop(.72, "rgba(0,0,0,.07)");
-      windowGlow.addColorStop(1, "rgba(0,0,0,0)");
-      lightingCtx.fillStyle = windowGlow;
-      lightingCtx.save();
-      lightingCtx.translate(wx, wy + 4);
-      lightingCtx.scale(1.08, 1.24);
+    // The portal reveals its own violet aura through the level-two darkness.
+    const portalCenterX = level2Portal.x - camera.x + level2Portal.w / 2;
+    const portalCenterY = level2Portal.y - camera.y + level2Portal.h - 64;
+    if (portalCenterX > -170 && portalCenterX < VIEW_W + 170) {
+      const portalPulse = .68 + Math.sin(animationTime * 4.2) * .1;
+      const portalGlow = lightingCtx.createRadialGradient(portalCenterX, portalCenterY, 8, portalCenterX, portalCenterY, 128);
+      portalGlow.addColorStop(0, `rgba(0,0,0,${.78 * portalPulse})`);
+      portalGlow.addColorStop(.42, `rgba(0,0,0,${.5 * portalPulse})`);
+      portalGlow.addColorStop(.75, `rgba(0,0,0,${.18 * portalPulse})`);
+      portalGlow.addColorStop(1, "rgba(0,0,0,0)");
+      lightingCtx.fillStyle = portalGlow;
       lightingCtx.beginPath();
-      lightingCtx.arc(0, 0, 58, 0, Math.PI * 2);
+      lightingCtx.arc(portalCenterX, portalCenterY, 128, 0, Math.PI * 2);
       lightingCtx.fill();
-      lightingCtx.restore();
     }
     lightingCtx.globalCompositeOperation = "source-over";
 
@@ -3263,7 +3238,7 @@
     drawBushes();
     drawPlatforms();
     drawStreetLamps();
-    drawCabinExterior();
+    if (currentLevel === 1) drawCabinExterior();
     drawWaterfalls();
     drawLadders();
     drawItems();
