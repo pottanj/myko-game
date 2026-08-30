@@ -784,9 +784,9 @@
     { x: 3350, y: 455 }
   ];
   const level2CabinWindows = [
-    { x: 84, y: 284, w: 26, h: 24 },
-    { x: 185, y: 276, w: 27, h: 25 },
-    { x: 79, y: 365, w: 28, h: 25 }
+    { x: 88, y: 261, w: 17, h: 23 },
+    { x: 195, y: 258, w: 20, h: 25 },
+    { x: 94, y: 342, w: 19, h: 24 }
   ];
   const level2SurfaceSpots = [
     [300,429],[730,429],[825,309],[1110,249],[1180,429],
@@ -2041,14 +2041,15 @@
           const windowY = Math.round(window.y - camera.y);
           const glow = ctx.createRadialGradient(
             windowX + window.w / 2, windowY + window.h / 2, 2,
-            windowX + window.w / 2, windowY + window.h / 2, 48
+            windowX + window.w / 2, windowY + window.h / 2, 42
           );
-          glow.addColorStop(0, `rgba(255, 218, 118, ${.28 * windowFlicker})`);
+          glow.addColorStop(0, `rgba(255, 218, 118, ${.23 * windowFlicker})`);
+          glow.addColorStop(.46, `rgba(255, 180, 70, ${.1 * windowFlicker})`);
           glow.addColorStop(1, "rgba(255, 150, 42, 0)");
           ctx.fillStyle = glow;
-          ctx.fillRect(windowX - 35, windowY - 35, window.w + 70, window.h + 70);
-          ctx.fillStyle = `rgba(255, 207, 91, ${.42 * windowFlicker})`;
-          ctx.fillRect(windowX, windowY, window.w, window.h);
+          ctx.beginPath();
+          ctx.arc(windowX + window.w / 2, windowY + window.h / 2, 42, 0, Math.PI * 2);
+          ctx.fill();
         }
         ctx.restore();
       }
@@ -2833,11 +2834,18 @@
       const wy = window.y - camera.y + window.h / 2;
       if (wx < -100 || wx > VIEW_W + 100) continue;
       const windowGlow = lightingCtx.createRadialGradient(wx, wy, 3, wx, wy, 58);
-      windowGlow.addColorStop(0, "rgba(0,0,0,.62)");
-      windowGlow.addColorStop(.48, "rgba(0,0,0,.28)");
+      windowGlow.addColorStop(0, "rgba(0,0,0,.56)");
+      windowGlow.addColorStop(.42, "rgba(0,0,0,.22)");
+      windowGlow.addColorStop(.72, "rgba(0,0,0,.07)");
       windowGlow.addColorStop(1, "rgba(0,0,0,0)");
       lightingCtx.fillStyle = windowGlow;
-      lightingCtx.fillRect(wx - 60, wy - 50, 120, 105);
+      lightingCtx.save();
+      lightingCtx.translate(wx, wy + 4);
+      lightingCtx.scale(1.08, 1.24);
+      lightingCtx.beginPath();
+      lightingCtx.arc(0, 0, 58, 0, Math.PI * 2);
+      lightingCtx.fill();
+      lightingCtx.restore();
     }
     lightingCtx.globalCompositeOperation = "source-over";
 
