@@ -866,7 +866,10 @@
   const level2SurfaceSpots = [
     [300,429],[730,429],[825,309],[1110,249],[1180,429],
     [1435,319],[1660,429],[1940,309],[2160,239],[2240,429],
-    [2700,429],[2890,314],[3080,429],[3195,259],[3400,429]
+    [2700,429],[2890,314],[3080,429],[3195,259],[3400,429],
+    // Extra clearly visible ground mushroom so level two always offers at
+    // least 15 straightforward surface pickups outside waterfall openings.
+    [890,429]
   ];
   const level2TunnelSpots = [
     [340,794],[480,794],[620,794],[745,674],[900,794],
