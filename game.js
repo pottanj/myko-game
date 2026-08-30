@@ -327,7 +327,7 @@
   const CAVE_BEAR_VISUAL_SINK = 15;
   const CABIN_VISUAL_RISE = -6;
 
-  const player = { x: 480, y: 407, w: 34, h: 48, vx: 0, vy: 0, grounded: true, facing: 1, hp: 5, maxHp: 5, hurtTimer: 0, jumpsUsed: 0, idleTimer: 0 };
+  const player = { x: 480, y: 407, w: 34, h: 48, vx: 0, vy: 0, grounded: true, facing: 1, hp: 5, maxHp: 5, hurtTimer: 0, jumpsUsed: 0, idleTimer: 0, waterfallFall: false };
   const spawn = { x: 174, y: 350 };
   const LEVEL_TWO_TEST_MODE = true;
   const camera = { x: 0, y: 0 };
@@ -1039,7 +1039,19 @@
     }
     player.grounded = false;
 
+    // Water itself is not a damage collider. Once Myko has missed the grass
+    // lip, keep the waterfall column open all the way down so the fall—not
+    // touching the animated water—causes the eventual game over.
+    const playerCenterX = player.x + player.w / 2;
+    if (currentLevel !== 2 || player.y + player.h <= 455) player.waterfallFall = false;
+    if (currentLevel === 2 && player.y + player.h > 455 &&
+      level2WaterfallHazards.some((waterfall) => (
+        playerCenterX > waterfall.x && playerCenterX < waterfall.x + waterfall.w
+      ))) player.waterfallFall = true;
+    const fallingThroughLevelTwoGap = currentLevel === 2 && player.waterfallFall;
+
     for (const platform of level.platforms) {
+      if (fallingThroughLevelTwoGap && platform.underground) continue;
       const overlapsX = player.x + player.w > platform.x && player.x < platform.x + platform.w;
       const crossedTop = previousBottom <= platform.y && player.y + player.h >= platform.y;
       if (!player.climbing && overlapsX && crossedTop && player.vy >= 0) {
@@ -1083,18 +1095,6 @@
         if (basket.brown + basket.yellow + basket.beige === MUSHROOM_GOAL) {
           playMushroomCompletionSound();
         }
-      }
-    }
-
-    // Level-two waterfalls are real open hazards. Myko is safe while jumping
-    // above the lip, but falling below the grass edge starts the death scene.
-    if (currentLevel === 2 && player.y + player.h > 468) {
-      const touchesWaterfall = level2WaterfallHazards.some((waterfall) => (
-        player.x + player.w > waterfall.x + 4 && player.x < waterfall.x + waterfall.w - 4
-      ));
-      if (touchesWaterfall) {
-        triggerGameOver();
-        return;
       }
     }
 
