@@ -73,6 +73,7 @@
   let introStartTimer = 0;
   let deathTransitionTimer = 0;
   const DEATH_TRANSITION_DURATION = 1.62;
+  const AFK_DELAY_SECONDS = 30;
   let deathGroundY = 455;
   let deathStartY = 0;
   let gameOverRevealTimer = 0;
@@ -396,11 +397,13 @@
   const MAIN_GROUND_VISUAL_SINK = -1;
   const CAVE_BEAR_VISUAL_SINK = 15;
   const CABIN_VISUAL_RISE = -6;
+  const CAVE_CEILING_Y = 540;
 
   const player = { x: 480, y: 407, w: 34, h: 48, vx: 0, vy: 0, grounded: true, facing: 1, hp: 5, maxHp: 5, hurtTimer: 0, jumpsUsed: 0, idleTimer: 0 };
   const spawn = { x: 174, y: 350 };
   const LEVEL_TWO_TEST_MODE = false;
   const camera = { x: 0, y: 0 };
+  let caveCameraLocked = false;
   const keys = new Set();
   const MUSHROOM_GOAL = 30;
   const basket = { brown: 0, yellow: 0, beige: 0 };
@@ -411,6 +414,7 @@
   let currentLevel = LEVEL_TWO_TEST_MODE ? 2 : 1;
   let flashlightEquipped = false;
   let animationTime = 0;
+  let climbAnimationTime = 0;
 
   const loadOriginal = (path) => {
     const image = new Image();
@@ -465,27 +469,39 @@
   const loadInteractiveSprite = (path) => {
     return loadOriginal(`Interactive items/${path}`);
   };
+  const loadCustomSprite = (path) => {
+    const sprite = new Image();
+    sprite.src = `assets/custom/${path}?v=20260901-hp-items-1`;
+    return sprite;
+  };
   const interactiveSprites = {
     mushrooms: Array.from({ length: 4 }, (_, i) => loadInteractiveSprite(`fungi/mushrooms/mushroom ${i + 1}.png`)),
     fly: loadInteractiveSprite("fungi/dangerous mushrooms/red mushroom.png"),
-    apples: Array.from({ length: 2 }, (_, i) => loadInteractiveSprite(`hp items/apple ${i + 1}.png`)),
-    berries: Array.from({ length: 2 }, (_, i) => loadInteractiveSprite(`hp items/berry ${i + 1}.png`)),
-    bush: loadInteractiveSprite("hp items/hp item placements/bush.png"),
-    tree: loadInteractiveSprite("hp items/hp item placements/tree.png"),
+    fruits: {
+      blueberry: loadCustomSprite("hp_blueberry.png"),
+      lingon: loadCustomSprite("hp_lingon.png"),
+      redApple: loadCustomSprite("hp_red_apple.png"),
+      greenApple: loadCustomSprite("hp_green_apple.png")
+    },
     cabin: loadInteractiveSprite("other/cabin.png"),
     portal: loadInteractiveSprite("other/end_portal.png")
   };
   const vegetationSprites = {
-    bushes: Array.from({ length: 3 }, (_, index) => {
+    bushes: Array.from({ length: 2 }, (_, index) => {
       const sprite = new Image();
-      sprite.src = `assets/custom/bush_variant_${index + 1}.png?v=20260828-1`;
+      sprite.src = `assets/custom/bush_variant_${index + 1}.png?v=20260901-user-decor-1`;
       return sprite;
     }),
     trees: Array.from({ length: 3 }, (_, index) => {
       const sprite = new Image();
-      sprite.src = `assets/custom/tree_variant_${index + 1}.png?v=20260828-1`;
+      sprite.src = `assets/custom/tree_variant_${index + 1}.png?v=20260901-user-decor-1`;
       return sprite;
-    })
+    }),
+    placements: {
+      blueberryBush: loadCustomSprite("hp_blueberry_bush.png"),
+      lingonBush: loadCustomSprite("hp_lingon_bush.png"),
+      appleTree: loadCustomSprite("hp_apple_tree.png")
+    }
   };
   const cabinInteriorSprite = new Image();
   cabinInteriorSprite.src = "assets/custom/cabin_interior_v2.png?v=20260828-1";
@@ -729,31 +745,31 @@
     { x: 1685, y: 455, w: 300, h: 85 },
     { x: 1985, y: 455, w: 837, h: 85 },
     { x: 2865, y: 455, w: 735, h: 85 },
-    { x: 760, y: 335, w: 190, h: 28, rockAsset: 0 },
+    { x: 800, y: 335, w: 190, h: 28, rockAsset: 0 },
     { x: 1410, y: 345, w: 210, h: 28, rockAsset: 1 },
     { x: 2040, y: 355, w: 170, h: 28, rockAsset: 2 },
     { x: 2250, y: 280, w: 180, h: 28, rockAsset: 3 },
     { x: 2490, y: 335, w: 170, h: 28, rockAsset: 4 },
     { x: 2690, y: 250, w: 130, h: 28, rockAsset: 5 },
-    { x: 1350, y: 820, w: 930, h: 90, underground: true },
-    { x: 2280, y: 820, w: 320, h: 90, underground: true },
-    { x: 2600, y: 820, w: 440, h: 90, underground: true },
-    { x: 2050, y: 720, w: 150, h: 24, underground: true },
-    { x: 2670, y: 710, w: 130, h: 24, underground: true }
+    { x: 1350, y: 860, w: 930, h: 90, underground: true },
+    { x: 2280, y: 860, w: 320, h: 90, underground: true },
+    { x: 2600, y: 860, w: 440, h: 90, underground: true },
+    { x: 2050, y: 760, w: 150, h: 24, underground: true },
+    { x: 2670, y: 750, w: 130, h: 24, underground: true }
   ];
 
   const level1Ladders = [
-    { x: 1637, y: 420, w: 48, h: 400 },
-    { x: 2822, y: 430, w: 48, h: 390 }
+    { x: 1637, y: 420, w: 48, h: 440 },
+    { x: 2822, y: 430, w: 48, h: 430 }
   ];
 
-  const bear = { x: 2360, y: 770, w: 76, h: 50, vx: 0, awake: false, patrolDirection: 1 };
+  const bear = { x: 2360, y: 810, w: 76, h: 50, vx: 0, awake: false, patrolDirection: 1 };
 
   const level1Trees = [
     { x: 430, y: 455, scale: .78, variant: 2 },
-    { x: 1000, y: 455, scale: 1, variant: 0 },
+    { x: 740, y: 455, scale: 1, variant: 0 },
     { x: 1320, y: 455, scale: .82, variant: 2 },
-    { x: 1885, y: 455, scale: 1.02, variant: 1 },
+    { x: 1885, y: 455, scale: 1.02, variant: 1, placement: "appleTree", appleType: "redApple" },
     { x: 2870, y: 455, scale: .8, variant: 0 },
     { x: 3160, y: 455, scale: 1.04, variant: 2 },
     { x: 3460, y: 455, scale: .76, variant: 1 }
@@ -761,29 +777,30 @@
 
   const level1Bushes = [
     { x: 470, y: 455, scale: .78, variant: 1 },
-    { x: 1220, y: 455, scale: .82, variant: 2 },
+    { x: 1220, y: 455, scale: .82, variant: 0 },
     { x: 1740, y: 455, scale: .76, variant: 0 },
     { x: 2385, y: 455, scale: .86, variant: 1 },
-    { x: 2925, y: 455, scale: .88, variant: 2 },
-    { x: 3210, y: 455, scale: 1, variant: 0 },
-    { x: 3420, y: 455, scale: .74, variant: 2 }
+    { x: 1000, y: 455, scale: .88, variant: 1, placement: "blueberryBush" },
+    { x: 3210, y: 455, scale: 1, variant: 0, placement: "lingonBush" },
+    { x: 3420, y: 455, scale: .74, variant: 0 }
   ];
 
   const surfaceMushroomSpots = [
-    [270, 429], [680, 429], [900, 309], [1020, 429],
-    [1080, 429], [1445, 319], [1710, 429], [1900, 429], [2080, 329], [2160, 329],
+    [270, 429], [680, 429], [900, 309], [2460, 429, 1],
+    [1270, 429], [1445, 319], [1710, 429], [1900, 429], [2080, 329], [2160, 329],
     [2325, 254], [2550, 309], [2745, 224], [3040, 429], [3400, 429]
   ];
 
   const tunnelMushroomSpots = [
-    [1370, 794], [1510, 794], [1650, 794], [1790, 794], [1930, 794],
-    [2190, 794], [2060, 694], [2120, 694], [2300, 794], [2440, 794],
-    [2620, 794], [2690, 794], [2760, 794], [2920, 794], [3000, 794]
+    [1370, 834], [1510, 834], [1650, 834], [1790, 834], [1930, 834],
+    [2190, 834], [2060, 734], [2120, 734], [2300, 834], [2440, 834],
+    [2620, 834], [2690, 834], [2760, 834], [2920, 834], [3000, 834]
   ];
 
   const mushroomTypes = ["brown", "yellow", "beige"];
-  const makeMushrooms = (spots, region) => spots.map(([x, y], index) => ({
-    type: mushroomTypes[index % mushroomTypes.length], x, y, w: 22, h: 26, region, variant: index % 4
+  const makeMushrooms = (spots, region) => spots.map(([x, y, variantOverride], index) => ({
+    type: mushroomTypes[index % mushroomTypes.length], x, y, w: 22, h: 26, region,
+    variant: variantOverride ?? index % 4
   }));
 
   const level1Items = [
@@ -791,13 +808,11 @@
     ...makeMushrooms(tunnelMushroomSpots, "tunnel"),
     { type: "fly", x: 535, y: 429, w: 24, h: 26 },
     { type: "fly", x: 1555, y: 319, w: 24, h: 26 },
-    { type: "fly", x: 2210, y: 794, w: 24, h: 26 },
-    { type: "fly", x: 2480, y: 794, w: 24, h: 26 },
-    { type: "berry", x: 2959, y: 400, w: 18, h: 20 },
-    { type: "berry", x: 2980, y: 396, w: 18, h: 20 },
-    { type: "berry", x: 3250, y: 400, w: 18, h: 20 },
-    // Apples only grow on the gnarled broadleaf tree (tree variant 1).
-    { type: "apple", x: 1900, y: 245, w: 20, h: 24 }
+    { type: "fly", x: 2210, y: 834, w: 24, h: 26 },
+    { type: "fly", x: 2480, y: 834, w: 24, h: 26 },
+    { type: "blueberry", x: 1014, y: 392, w: 18, h: 20 },
+    { type: "lingon", x: 3271, y: 397, w: 18, h: 20 },
+    { type: "redApple", x: 1900, y: 245, w: 20, h: 24 }
   ];
 
   const level2Portal = { x: 3480, y: 365, w: 58, h: 90 };
@@ -816,17 +831,17 @@
     { x: 2120, y: 265, w: 170, h: 28, rockAsset: 5 },
     { x: 2840, y: 340, w: 190, h: 28, rockAsset: 2 },
     { x: 3140, y: 285, w: 175, h: 28, rockAsset: 3 },
-    { x: 300, y: 820, w: 750, h: 90, underground: true },
-    { x: 1050, y: 820, w: 750, h: 90, underground: true },
-    { x: 1800, y: 820, w: 500, h: 90, underground: true },
-    { x: 2660, y: 820, w: 380, h: 90, underground: true },
-    { x: 720, y: 700, w: 155, h: 24, underground: true },
-    { x: 1110, y: 710, w: 155, h: 24, underground: true },
-    { x: 1510, y: 690, w: 155, h: 24, underground: true },
-    { x: 1970, y: 710, w: 155, h: 24, underground: true }
+    { x: 300, y: 860, w: 750, h: 90, underground: true },
+    { x: 1050, y: 860, w: 750, h: 90, underground: true },
+    { x: 1800, y: 860, w: 500, h: 90, underground: true },
+    { x: 2660, y: 860, w: 380, h: 90, underground: true },
+    { x: 720, y: 740, w: 155, h: 24, underground: true },
+    { x: 1110, y: 750, w: 155, h: 24, underground: true },
+    { x: 1510, y: 730, w: 155, h: 24, underground: true },
+    { x: 1970, y: 750, w: 155, h: 24, underground: true }
   ];
   const level2Ladders = [
-    { x: 626, y: 430, w: 48, h: 390 }
+    { x: 626, y: 430, w: 48, h: 430 }
   ];
   const level2Trees = [
     { x: 190, y: 455, scale: .78, variant: 2 },
@@ -834,20 +849,20 @@
     { x: 1010, y: 455, scale: .8, variant: 1 },
     { x: 1330, y: 455, scale: .82, variant: 2 },
     { x: 1730, y: 455, scale: .9, variant: 0 },
-    { x: 2050, y: 455, scale: 1.02, variant: 1 },
+    { x: 2050, y: 455, scale: 1.02, variant: 1, placement: "appleTree", appleType: "greenApple" },
     { x: 2780, y: 455, scale: .8, variant: 0 },
     { x: 3070, y: 455, scale: .94, variant: 2 },
     { x: 3370, y: 455, scale: .76, variant: 1 }
   ];
   const level2Bushes = [
-    { x: 270, y: 455, scale: .78, variant: 2 },
+    { x: 270, y: 455, scale: .78, variant: 0, placement: "blueberryBush" },
     { x: 760, y: 455, scale: .74, variant: 0 },
     { x: 1160, y: 455, scale: .78, variant: 1 },
-    { x: 1460, y: 455, scale: .82, variant: 2 },
+    { x: 1460, y: 455, scale: .82, variant: 1, placement: "lingonBush" },
     { x: 1880, y: 455, scale: .8, variant: 0 },
-    { x: 2180, y: 455, scale: .86, variant: 1 },
-    { x: 2740, y: 455, scale: .78, variant: 2 },
-    { x: 2970, y: 455, scale: .82, variant: 0 },
+    { x: 2180, y: 455, scale: .86, variant: 1, placement: "blueberryBush" },
+    { x: 2740, y: 455, scale: .78, variant: 0 },
+    { x: 2970, y: 455, scale: .82, variant: 0, placement: "lingonBush" },
     { x: 3260, y: 455, scale: .8, variant: 1 }
   ];
   const level2StreetLamps = [
@@ -872,22 +887,21 @@
     [890,429]
   ];
   const level2TunnelSpots = [
-    [340,794],[480,794],[620,794],[745,674],[900,794],
-    [1080,794],[1140,684],[1340,794],[1535,664],[1700,794],
-    [1840,794],[1995,684],[2180,794],[2240,794],[2740,794]
+    [340,834],[480,834],[620,834],[745,714],[900,834],
+    [1080,834],[1140,724],[1340,834],[1535,704],[1700,834],
+    [1840,834],[1995,724],[2180,834],[2240,834],[2740,834]
   ];
   const level2Items = [
     ...makeMushrooms(level2SurfaceSpots, "surface"),
     ...makeMushrooms(level2TunnelSpots, "tunnel"),
     { type: "fly", x: 880, y: 309, w: 24, h: 26 },
     { type: "fly", x: 2010, y: 309, w: 24, h: 26 },
-    { type: "fly", x: 1430, y: 794, w: 24, h: 26 },
-    { type: "berry", x: 285, y: 400, w: 18, h: 20 },
-    { type: "berry", x: 1475, y: 400, w: 18, h: 20 },
-    { type: "berry", x: 2195, y: 400, w: 18, h: 20 },
-    { type: "berry", x: 2985, y: 400, w: 18, h: 20 },
-    // Apples only grow on the gnarled broadleaf tree (tree variant 1).
-    { type: "apple", x: 2055, y: 245, w: 20, h: 24 }
+    { type: "fly", x: 1430, y: 834, w: 24, h: 26 },
+    { type: "blueberry", x: 285, y: 399, w: 18, h: 20 },
+    { type: "lingon", x: 1507, y: 397, w: 18, h: 20 },
+    { type: "blueberry", x: 2228, y: 392, w: 18, h: 20 },
+    { type: "lingon", x: 2981, y: 394, w: 18, h: 20 },
+    { type: "greenApple", x: 2055, y: 245, w: 20, h: 24 }
   ];
 
   function levelData() {
@@ -1106,8 +1120,18 @@
       player.vy += GRAVITY * dt;
     }
 
+    if (player.climbing) {
+      if (up || down) climbAnimationTime += dt;
+    } else {
+      climbAnimationTime = 0;
+    }
+
     const previousBottom = player.y + player.h;
     player.y += player.vy * dt;
+    if (caveCameraLocked && !player.climbing && player.y < CAVE_CEILING_Y) {
+      player.y = CAVE_CEILING_Y;
+      if (player.vy < 0) player.vy = 0;
+    }
     if (player.climbing && nearbyLadder && down) {
       player.y = Math.min(player.y, nearbyLadder.y + nearbyLadder.h - player.h);
     }
@@ -1153,12 +1177,13 @@
             return;
           }
         }
-      } else if (item.type === "berry" || item.type === "apple") {
+      } else if (["blueberry", "lingon", "redApple", "greenApple"].includes(item.type)) {
         // Healing food remains in the world at full health. It is consumed
         // only when it can restore an actually missing heart.
         if (player.hp < player.maxHp) {
           player.hp += 1;
           item.collected = true;
+          addFloatingFeedback("healing", 1);
           playHealingFoodSound();
         }
       } else {
@@ -1173,8 +1198,8 @@
     }
 
     const bearBounds = currentLevel === 1
-      ? { min: 1370, max: 2960, pitMin: 1350, pitMax: 3040, pitTop: 700 }
-      : { min: 700, max: 3380, pitMin: 0, pitMax: WORLD_W, pitTop: 300 };
+      ? { min: 1370, max: 2960, pitMin: 1350, pitMax: 3040, pitTop: 740 }
+      : { min: 700, max: 2214, pitMin: 700, pitMax: 2290, pitTop: 300 };
     const playerCenter = player.x + player.w / 2;
     const playerInBearPit = playerCenter >= bearBounds.pitMin && playerCenter <= bearBounds.pitMax && player.y > bearBounds.pitTop;
     bear.awake = playerInBearPit;
@@ -1190,8 +1215,8 @@
     bear.x += bear.vx * dt;
     bear.x = Math.max(bearBounds.min, Math.min(bearBounds.max, bear.x));
     if (overlaps(player, bear) && player.hurtTimer === 0) {
-      player.hp -= 2;
-      addFloatingFeedback("damage", 2);
+      player.hp -= 1;
+      addFloatingFeedback("damage", 1);
       player.hurtTimer = .55;
       playPlayerHurtSound();
       player.vy = -390;
@@ -1213,8 +1238,13 @@
     const targetX = player.x + player.w / 2 - VIEW_W * 0.42;
     camera.x += (targetX - camera.x) * Math.min(1, dt * 6);
     camera.x = Math.max(0, Math.min(WORLD_W - VIEW_W, camera.x));
-    // Keep Myko lower in the frame so more of the level above is visible.
-    const targetY = player.y + player.h / 2 - VIEW_H * .84;
+    // Once Myko enters the cave, keep the camera anchored to the underground
+    // view. A double jump must not reveal the surface; only climbing out or
+    // landing back on the surface releases the lock.
+    if (player.y > 545) caveCameraLocked = true;
+    else if ((player.climbing && player.y < 500) || (player.grounded && player.y < 500)) caveCameraLocked = false;
+    const freeCameraTargetY = player.y + player.h / 2 - VIEW_H * .84;
+    const targetY = caveCameraLocked ? WORLD_H - VIEW_H : freeCameraTargetY;
     camera.y += (targetY - camera.y) * Math.min(1, dt * 5);
     camera.y = Math.max(0, Math.min(WORLD_H - VIEW_H, camera.y));
   }
@@ -1271,7 +1301,7 @@
 
   function resetBear() {
     Object.assign(bear, currentLevel === 1
-      ? { x: 2360, y: 770, vx: 0, awake: false, patrolDirection: 1 }
+      ? { x: 2360, y: 810, vx: 0, awake: false, patrolDirection: 1 }
       : { x: 1760, y: 405, vx: 0, awake: false, patrolDirection: 1 });
   }
 
@@ -1320,6 +1350,7 @@
     gameState = currentLevel === 1 ? "cabin" : "playing";
     flashlightEquipped = false;
     animationTime = 0;
+    climbAnimationTime = 0;
     keys.clear();
     if (currentLevel === 1) {
       Object.assign(player, { x: 480, y: 407, vx: 0, vy: 0, grounded: true, climbing: false, hp: player.maxHp, hurtTimer: 0, facing: 1, jumpsUsed: 0, idleTimer: 0 });
@@ -1972,7 +2003,7 @@
       ctx.fillRect(rx, ry, 42, 18);
     }
     ctx.fillStyle = "#8a744e";
-    if (currentLevel === 1) ctx.fillRect(Math.round(2280 - camera.x), Math.round(872 - camera.y), 320, 28);
+    if (currentLevel === 1) ctx.fillRect(Math.round(2280 - camera.x), Math.round(912 - camera.y), 320, 28);
   }
 
   function drawLockedSubsoilBackdrop() {
@@ -2370,11 +2401,13 @@
   function drawTrees() {
     const data = levelData();
     ctx.save();
-    ctx.filter = "saturate(80%) brightness(94%) contrast(88%) hue-rotate(-6deg)";
+    ctx.filter = "none";
     for (const tree of levelData().trees) {
       const x = Math.round(tree.x - camera.x);
       const baseY = tree.y - camera.y;
-      const s = tree.scale;
+      // Decorative vegetation always uses its authored base size. HP placement
+      // trees keep their explicit scale so their fruit remains correctly aligned.
+      const s = tree.placement ? tree.scale : 1;
       if (x < -130 || x > VIEW_W + 130) continue;
       const nearLadder = data.ladders.some((ladder) => Math.abs(tree.x - (ladder.x + ladder.w / 2)) < 145);
       const behindRaisedPlatform = data.platforms.some((platform) => (
@@ -2382,10 +2415,12 @@
         && tree.x > platform.x - 45 && tree.x < platform.x + platform.w + 45
       ));
       ctx.globalAlpha = nearLadder ? .86 : behindRaisedPlatform ? .91 : .98;
-      const sprite = vegetationSprites.trees[tree.variant ?? 0];
+      const sprite = tree.placement
+        ? vegetationSprites.placements[tree.placement]
+        : vegetationSprites.trees[tree.variant ?? 0];
       if (sprite?.complete && sprite.naturalWidth) {
         const targetHeights = [300, 245, 275];
-        const height = targetHeights[tree.variant ?? 0] * s;
+        const height = (tree.placement === "appleTree" ? sprite.naturalHeight : targetHeights[tree.variant ?? 0]) * s;
         const width = height * sprite.naturalWidth / sprite.naturalHeight;
         ctx.drawImage(sprite, Math.round(x - width / 2), Math.round(baseY - height), Math.round(width), Math.round(height));
         continue;
@@ -2407,12 +2442,14 @@
   function drawBushes() {
     const data = levelData();
     ctx.save();
-    ctx.filter = "saturate(82%) brightness(95%) contrast(89%) hue-rotate(-5deg)";
+    ctx.filter = "none";
     for (const bush of levelData().bushes) {
       const x = Math.round(bush.x - camera.x);
       const elevatedPlatformSink = bush.y < 455 ? GROUND_VISUAL_SINK : 0;
       const y = Math.round(bush.y - camera.y + elevatedPlatformSink);
-      const s = bush.scale;
+      // Decorative bushes stay at base size; fruit-bearing placement bushes
+      // retain their own scale and alignment.
+      const s = bush.placement ? bush.scale : 1;
       if (x < -90 || x > VIEW_W + 90) continue;
       const bushCenter = bush.x + 45 * s;
       const nearLadder = data.ladders.some((ladder) => Math.abs(bushCenter - (ladder.x + ladder.w / 2)) < 100);
@@ -2421,10 +2458,12 @@
         && bushCenter > platform.x - 25 && bushCenter < platform.x + platform.w + 25
       ));
       ctx.globalAlpha = nearLadder ? .88 : behindRaisedPlatform ? .93 : .98;
-      const sprite = vegetationSprites.bushes[bush.variant ?? 0];
+      const sprite = bush.placement
+        ? vegetationSprites.placements[bush.placement]
+        : vegetationSprites.bushes[bush.variant ?? 0];
       if (sprite?.complete && sprite.naturalWidth) {
-        const targetHeights = [62, 75, 72];
-        const height = targetHeights[bush.variant ?? 0] * s;
+        const targetHeights = [62, 75];
+        const height = (bush.placement ? sprite.naturalHeight : targetHeights[bush.variant ?? 0]) * s;
         const width = height * sprite.naturalWidth / sprite.naturalHeight;
         const centerX = x + 49 * s;
         ctx.drawImage(sprite, Math.round(centerX - width / 2), Math.round(y - height), Math.round(width), Math.round(height));
@@ -2443,8 +2482,9 @@
   function drawMushroom(item, x, y) {
     const sprite = item.type === "fly" ? interactiveSprites.fly : interactiveSprites.mushrooms[item.variant ?? 0];
     if (sprite?.complete && sprite.naturalWidth) {
-      const width = item.type === "fly" ? 26 : 27;
-      const height = 29;
+      const variantScale = item.type !== "fly" && item.variant >= 2 ? 1.1 : 1;
+      const width = Math.round((item.type === "fly" ? 30 : 31) * variantScale);
+      const height = Math.round(33 * variantScale);
       ctx.drawImage(sprite, Math.round(x + item.w / 2 - width / 2), Math.round(y + item.h - height), width, height);
       return;
     }
@@ -2475,17 +2515,18 @@
       // inside the grass/stone edge instead of floating above it.
       const mushroomLike = ["brown", "yellow", "beige", "fly"].includes(item.type);
       const onMainGround = mushroomLike && item.y === 429;
-      const groundSink = item.type === "apple"
+      const isApple = item.type === "redApple" || item.type === "greenApple";
+      const groundSink = isApple
         ? 0
         : onMainGround ? MAIN_GROUND_VISUAL_SINK : GROUND_VISUAL_SINK;
       const y = Math.round(item.y - camera.y + groundSink);
       if (x + item.w < 0 || x > VIEW_W) continue;
       if (["brown", "yellow", "beige", "fly"].includes(item.type)) {
         drawMushroom(item, x, y);
-      } else if (item.type === "apple") {
-        const apple = interactiveSprites.apples[Math.floor(item.x / 100) % interactiveSprites.apples.length];
+      } else if (isApple) {
+        const apple = interactiveSprites.fruits[item.type];
         if (apple.complete && apple.naturalWidth) {
-          ctx.drawImage(apple, Math.round(x + item.w / 2 - 13.5), Math.round(y + item.h - 27), 27, 27);
+          ctx.drawImage(apple, Math.round(x + item.w / 2 - 17), Math.round(y + item.h - 34), 34, 34);
           continue;
         }
         ctx.fillStyle = "#6b3a24"; ctx.fillRect(x + 9, y, 3, 6);
@@ -2493,7 +2534,7 @@
         ctx.fillStyle = "#c9513e"; ctx.fillRect(x + 3, y + 6, 16, 15);
         ctx.fillStyle = "#e77b55"; ctx.fillRect(x + 5, y + 7, 5, 4);
       } else {
-        const berry = interactiveSprites.berries[Math.floor(item.x / 100) % interactiveSprites.berries.length];
+        const berry = interactiveSprites.fruits[item.type];
         if (berry.complete && berry.naturalWidth) {
           ctx.drawImage(berry, Math.round(x + item.w / 2 - 12), Math.round(y + item.h - 24), 24, 24);
           continue;
@@ -2526,7 +2567,7 @@
       frames = spriteSet.hurt[direction];
     } else if (player.climbing) {
       frames = spriteSet.climb;
-      frameIndex = Math.floor(animationTime * 7) % frames.length;
+      frameIndex = Math.floor(climbAnimationTime * 7) % frames.length;
     } else if (gameState === "playing" && !player.grounded) {
       frames = spriteSet.jump[direction];
       if (player.vy < -260) frameIndex = 0;
@@ -2536,11 +2577,11 @@
     } else if (Math.abs(player.vx) > 1) {
       frames = flashlightEquipped && gameState === "playing" ? spriteSet.flashlightRun[direction] : spriteSet.run[direction];
       frameIndex = Math.floor(animationTime * 10) % frames.length;
+    } else if (player.idleTimer >= AFK_DELAY_SECONDS) {
+      frames = spriteSet.afk[direction];
     } else if (flashlightEquipped && gameState === "playing") {
       frames = spriteSet.flashlightIdle;
       mirrorSprite = player.facing < 0;
-    } else if (player.idleTimer > 4) {
-      frames = spriteSet.afk[direction];
     } else {
       frames = spriteSet.idle[direction];
     }
@@ -3060,17 +3101,31 @@
       const x = Math.round(feedback.x - camera.x);
       const y = Math.round(feedback.y - camera.y - rise);
       ctx.globalAlpha = Math.max(0, alpha);
-      const label = feedback.kind === "mushroom" ? `+${feedback.amount}` : `−${feedback.amount}`;
+      const isPositive = feedback.kind === "mushroom" || feedback.kind === "healing";
+      const label = isPositive ? `+${feedback.amount}` : `−${feedback.amount}`;
       ctx.fillStyle = "rgba(17, 18, 12, .9)";
       ctx.fillText(label, x + 2, y + 2);
-      ctx.fillStyle = feedback.kind === "mushroom" ? "#f4d36f" : "#ff6657";
+      ctx.fillStyle = feedback.kind === "mushroom" ? "#f4d36f" : feedback.kind === "healing" ? "#8fdb72" : "#ff6657";
       ctx.fillText(label, x, y);
-      if (feedback.kind === "damage") {
+      if (feedback.kind === "damage" || feedback.kind === "healing") {
         if (uiSprites.heart.complete && uiSprites.heart.naturalWidth) {
           ctx.drawImage(uiSprites.heart, x + 15, y - 14, 16, 16);
         } else {
           ctx.fillStyle = "#e94a42";
           ctx.fillRect(x + 16, y - 10, 12, 9);
+        }
+        if (feedback.kind === "damage") {
+          // Turn the regular heart into a broken-heart icon with a bold,
+          // pixel-like crack that stays readable while the feedback rises.
+          ctx.strokeStyle = "#3b1717";
+          ctx.lineWidth = 2;
+          ctx.lineJoin = "miter";
+          ctx.beginPath();
+          ctx.moveTo(x + 23, y - 13);
+          ctx.lineTo(x + 20, y - 8);
+          ctx.lineTo(x + 24, y - 5);
+          ctx.lineTo(x + 21, y + 1);
+          ctx.stroke();
         }
       }
     }
@@ -3444,7 +3499,7 @@
     if (gameState === "dying") drawDyingPlayer();
     else drawPlayer();
     drawFloatingFeedback();
-    const caveDepth = Math.max(0, Math.min(1, (player.y - 500) / 220));
+    const caveDepth = caveCameraLocked ? 1 : Math.max(0, Math.min(1, (player.y - 500) / 220));
     if (currentLevel === 1) drawCaveLighting(caveDepth);
     drawLevelTwoDarkness();
     drawLevelTwoPortalAfterglow();
